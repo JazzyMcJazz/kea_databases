@@ -6,3 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+migration = { path = "./migration" }
+actix-web = "4.4.0"
+dotenv = "0.15.0"
+serde = "1.0.188"
+tracing = "0.1.37"
+env_logger = "0.10.0"
+tera = "1.19.1"
+rand = "0.8.5"

@@ -1,3 +1,9 @@
+use std::env;
+
+mod server;
+mod website;
+
 fn main() {
-    println!("Hello, world!");
+    env::set_var("RUST_BACKTRACE", "full");
+    server::main();
 }
