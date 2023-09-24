@@ -13,19 +13,6 @@ impl MigrationTrait for Migration {
         // STORED PROCEDURES //
         //===================//
         db.execute_unprepared("-- sql 
-            DROP FUNCTION IF EXISTS GetMultiplier;
-            CREATE FUNCTION GetMultiplier(
-                rarity ENUM('Common', 'Rare', 'Epic', 'Legendary')
-            )
-            RETURNS INT(1)
-            BEGIN
-                CASE
-                    WHEN rarity = 'Rare' THEN RETURN 2;
-                    WHEN rarity = 'Epic' THEN RETURN 3;
-                    WHEN rarity = 'Legendary' THEN RETURN 4;
-                    ELSE RETURN 1;
-                END CASE;
-            END;
             -- Drops a random item into the inventory of the character
             DROP PROCEDURE IF EXISTS drop_weapon;
             CREATE PROCEDURE drop_weapon(
