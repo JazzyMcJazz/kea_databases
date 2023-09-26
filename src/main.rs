@@ -1,7 +1,9 @@
 use std::env;
 
 mod server;
-mod website;
+mod routes;
+mod entity;
+mod middleware;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "full");

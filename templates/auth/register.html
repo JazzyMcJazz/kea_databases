@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/htmx.org@1.9.3" integrity="sha384-lVb3Rd/Ca0AxaoZg5sACe8FJKF0tnUgR2Kd7ehUOG5GCcROv5uBIZsOqovBAcWua" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <title>RPG</title>
+</head>
+<body>
+    {% include 'snippets/nav.html' %}
+    <h1>Register new account</h1>
+    
+    <form action="/register" method="POST">
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" required />
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required />
+        <label for="re_password">Repeat Password</label>
+        <input type="password" name="re_password" id="re_password" required />
+        <input type="submit" value="Register" />
+    </form>
+
+    <p>Already have an account? <a href="/login">Login</a></p>
+</body>
+</html>

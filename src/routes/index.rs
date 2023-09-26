@@ -1,15 +1,15 @@
-use actix_web::{get, HttpResponse, web};
+use actix_web::{get, HttpResponse, HttpRequest, web, HttpMessage};
 use tera::Context;
 use rand::Rng;
 
 use crate::server::AppState;
 
 #[get("/")]
-pub async fn index(data: web::Data<AppState>) -> HttpResponse {
+pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
+    let ext = { req.extensions() };
 
-    let mut context = Context::new();
-    context.insert("title", "Hello world!");
+    let context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
 
     let Ok(html) = tera.render("index.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
@@ -19,8 +19,9 @@ pub async fn index(data: web::Data<AppState>) -> HttpResponse {
 }
 
 #[get("/404")]
-pub async fn not_found(data: web::Data<AppState>) -> HttpResponse {
+pub async fn not_found(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
+    let ext = { req.extensions() };
 
     let possible_messages = [
         "I'm sorry Dave, I'm afraid I can't do that.",
@@ -45,7 +46,7 @@ pub async fn not_found(data: web::Data<AppState>) -> HttpResponse {
     let i = rand::thread_rng().gen_range(0..possible_messages.len());
     let message = possible_messages[i];
 
-    let mut context = Context::new();
+    let mut context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
     context.insert("message", &message);
 
     let Ok(html) = tera.render("404.html", &context) else {

@@ -9,7 +9,7 @@ use migration::{
     Migrator, MigratorTrait
 };
 
-use crate::website;
+use crate::{routes, middleware};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -47,6 +47,7 @@ async fn start() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(state.clone()))
+            .wrap(middleware::Authentication)
             .configure(init)
     });
 
@@ -59,21 +60,27 @@ async fn start() -> std::io::Result<()> {
 fn init(cfg: &mut web::ServiceConfig) {
 
     // Website routes
-    cfg.service(website::index::index);
-    cfg.service(website::index::not_found);
+    cfg.service(routes::index::index);
+    cfg.service(routes::index::not_found);
+    cfg.service(routes::auth::login_page);
+    cfg.service(routes::auth::register_page);
+    
+    // API routes
+    cfg.service(routes::auth::login);
+    cfg.service(routes::auth::register);
+    cfg.service(routes::auth::logout);
+
+    // Protected routes
+    // cfg.service(web::scope("")
+    //     .wrap(middleware::Authorization)
+    //     .service(routes::auth::register_page)
+    // );
     
     cfg.default_service(web::route().to(|| async { 
         actix_web::HttpResponse::Found()
             .append_header(("Location", "/404"))
             .finish()
      }));
-
-    // cfg.service(
-    //     // This scope is protected by the Authorization middleware
-    //     web::scope("")
-    //         .wrap(middleware::Authorization)
-    //         .service(auth_controller::refresh);
-    // );
 }
 
 pub fn main() {
