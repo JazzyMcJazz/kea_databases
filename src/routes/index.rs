@@ -1,10 +1,9 @@
-use actix_web::{get, HttpResponse, HttpRequest, web, HttpMessage};
+use actix_web::{HttpResponse, HttpRequest, web, HttpMessage};
 use tera::Context;
 use rand::Rng;
 
 use crate::server::AppState;
 
-#[get("/")]
 pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let ext = { req.extensions() };
@@ -18,7 +17,6 @@ pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse 
     HttpResponse::Ok().body(html)
 }
 
-#[get("/404")]
 pub async fn not_found(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let ext = { req.extensions() };

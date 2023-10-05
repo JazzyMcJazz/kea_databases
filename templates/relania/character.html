@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <br>
+    <a href="/relania">Back to character selection</a>
+
+    <h1>{{ character.name }}</h1>
+
+    <p>Level: {{ character.level }}</p>
+    <p>Class: {{ character.class }}</p>
+    <p>Guild: {% if character.guild %} {{character.guild}} {% else %} none {% endif %}</p>
+
+    <!-- Table view -->
+    <div style="display: flex">
+        <div>
+            <h2>Armor</h2>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Head</td>
+                        <td>{% if character.head %} {{character.head}} {% else %} none {% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Chest</td>
+                        <td>{% if character.chest %} {{character.chest}} {% else %} none {% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Hands</td>
+                        <td>{% if character.hands %} {{character.hands}} {% else %} none {% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Legs</td>
+                        <td>{% if character.legs %} {{character.legs}} {% else %} none {% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Feet</td>
+                        <td>{% if character.feet %} {{character.feet}} {% else %} none {% endif %}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <pre>       </pre>
+        <div>
+            <h2>Weapons</h2>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Mainhand</td>
+                        <td>{% if character.mainhand %} {{character.mainhand}} {% else %} none {% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Offhand</td>
+                        <td>{% if character.offhand %} {{character.offhand}} {% else %} none {% endif %}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

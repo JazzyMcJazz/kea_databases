@@ -1,27 +1,27 @@
-use actix_web::{HttpMessage, HttpResponse, HttpRequest, web, get, post, cookie, cookie::Cookie};
+use actix_web::{HttpMessage, HttpResponse, HttpRequest, web, cookie, cookie::Cookie};
 use sea_orm::{Set, EntityTrait, QueryFilter};
-use serde::{Deserialize, Serialize};
 use jsonwebtoken::{self, EncodingKey};
 use migration::sea_orm::*;
+use serde::Deserialize;
 use tera::Context;
 use chrono;
 
 use crate::entity::account;
 use crate::server::AppState;
+use crate::utils::auth::RdbClaims;
 
-const COOKIE_NAME: &str = "id";
+const COOKIE_NAME: &str = "rdb_id";
 const LOGIN_ERROR: &str = "Invalid username or password";
-const DEFAULT_REDIRECT: &str = "/";
+const DEFAULT_REDIRECT: &str = "/relania";
 
-
-#[get("/login")]
+// GET /relania/login
 pub async fn login_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let ext = { req.extensions() };
 
     let context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
 
-    let Ok(html) = tera.render("auth/login.html", &context) else {
+    let Ok(html) = tera.render("relania/auth/login.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 
@@ -39,7 +39,7 @@ pub struct PathQuery {
     next: Option<String>,
 }
 
-#[post("/login")]
+// POST /relania/login
 pub async fn login(data: web::Data<AppState>, form: web::Form<LoginForm>, q: web::Query<PathQuery>) -> HttpResponse {
     let conn = &data.conn;
 
@@ -78,14 +78,14 @@ pub async fn login(data: web::Data<AppState>, form: web::Form<LoginForm>, q: web
         .finish()
 }
 
-#[get("/register")]
+// GET /relania/register
 pub async fn register_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let ext = { req.extensions() };
 
     let context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
 
-    let Ok(html) = tera.render("auth/register.html", &context) else {
+    let Ok(html) = tera.render("relania/auth/register.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 
@@ -99,7 +99,7 @@ pub struct RegisterForm {
     pub re_password: String,
 }
 
-#[post("/register")]
+// POST /relania/register
 pub async fn register(data: web::Data<AppState>, form: web::Form<RegisterForm>) -> HttpResponse {
     if form.username.len() < 3 {
         return HttpResponse::BadRequest().body("Username must be at least 3 characters long");
@@ -141,14 +141,7 @@ pub async fn register(data: web::Data<AppState>, form: web::Form<RegisterForm>) 
         .finish()
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Claims {
-    sub: i32,
-    username: String,
-    exp: usize,
-}
-
-#[get("/logout")]
+// GET /relania/logout
 pub async fn logout(q: web::Query<PathQuery>) -> HttpResponse {
     let expires = cookie::time::OffsetDateTime::from_unix_timestamp(0).unwrap();
 
@@ -174,17 +167,8 @@ fn auth_token(id: i32, username: String) -> Result<String, ()> {
     };
     
     let key = EncodingKey::from_secret(secret.as_ref());
-
-    let exp = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::seconds(60 * 60 * 24 * 365))
-        .expect("valid timestamp")
-        .timestamp();
     
-    let claims = Claims {
-        sub: id,
-        username,
-        exp: exp as usize,
-    };
+    let claims = RdbClaims::new(id, username);
 
     let Ok(token) = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &claims, &key) else {
         eprintln!("Auth Error: Failed to encode JWT");

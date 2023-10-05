@@ -58,24 +58,27 @@ async fn start() -> std::io::Result<()> {
 }
 
 fn init(cfg: &mut web::ServiceConfig) {
-
-    // Website routes
-    cfg.service(routes::index::index);
-    cfg.service(routes::index::not_found);
-    cfg.service(routes::auth::login_page);
-    cfg.service(routes::auth::register_page);
     
-    // API routes
-    cfg.service(routes::auth::login);
-    cfg.service(routes::auth::register);
-    cfg.service(routes::auth::logout);
+    cfg.route("/",    web::get().to(routes::index::index));
+    cfg.route("/404", web::get().to(routes::index::not_found));
 
-    // Protected routes
-    // cfg.service(web::scope("")
-    //     .wrap(middleware::Authorization)
-    //     .service(routes::auth::register_page)
-    // );
+    // Relania (PUBLIC)
+    cfg.route("/relania/login",    web::get().to(routes::relania::auth::login_page));
+    cfg.route("/relania/login",    web::post().to(routes::relania::auth::login));
+    cfg.route("/relania/register", web::get().to(routes::relania::auth::register_page));
+    cfg.route("/relania/register", web::post().to(routes::relania::auth::register));
+
+    // Relania (PROTECTED)
+    cfg.service(web::scope("/relania")
+        .wrap(middleware::Authorization)
+        .route("", web::get().to(routes::relania::index::index))
+        .route("/logout", web::get().to(routes::relania::auth::logout))
+        .route("/c", web::get().to(routes::relania::character::create_character_view))
+        .route("/c", web::post().to(routes::relania::character::create_character))
+        .route("/c/{id}", web::get().to(routes::relania::character::character_list))
+    );
     
+    // Default 404
     cfg.default_service(web::route().to(|| async { 
         actix_web::HttpResponse::Found()
             .append_header(("Location", "/404"))

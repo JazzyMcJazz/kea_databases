@@ -10,11 +10,12 @@ impl MigrationTrait for Migration {
         let db = manager.get_connection();
         
         //========//
-        // EVENTS //
+        // VIEWS //
         //========//
         db.execute_unprepared("-- sql 
             CREATE or REPLACE VIEW character_overview AS
             SELECT
+                c.id,
                 c.name,
                 GetCharacterLevel(experience) AS level,
                 class.name AS class,

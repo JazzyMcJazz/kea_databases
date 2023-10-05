@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/htmx.org@1.9.3" integrity="sha384-lVb3Rd/Ca0AxaoZg5sACe8FJKF0tnUgR2Kd7ehUOG5GCcROv5uBIZsOqovBAcWua" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/response-targets.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <title>RPG</title>
+</head>
+<body hx-boost="true">
+    <nav>
+        <a href="/"><b>The RPG</b></a>
+        | 
+        {% if app.is_rdb and rdb_user %}
+            <a href="/relania/logout?next={{path}}">Logout</a>
+        {% elif app.is_ddb and ddb_user %}
+            <a href="/documenia/logout?next={{path}}">Logout</a>
+        {% elif app.is_gdb and gdb_user %}
+            <a href="/graphia/logout?next={{path}}">Logout</a>
+        {% endif %}
+        <hr>
+    </nav>
+
+    <main>
+        {% block main %}
+        {% endblock %}
+    </main>
+</body>
+</html>

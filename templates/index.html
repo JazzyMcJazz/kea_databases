@@ -1,17 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://unpkg.com/htmx.org@1.9.3" integrity="sha384-lVb3Rd/Ca0AxaoZg5sACe8FJKF0tnUgR2Kd7ehUOG5GCcROv5uBIZsOqovBAcWua" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
-    <title>RPG</title>
-</head>
-<body>
-    {% include 'snippets/nav.html' %}
-    <h1>Welcome to The RPG</h1>
-    {% if user %}
-        <p>Hello {{ user.username }}</p>
-    {% endif %}
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block main %}
+    <h1>Welcome, adventurer!</h1>
+    
+    <h2>Select a World:</h2>
+    <p><b><a href="/relania">Relania</a></b></p>
+    <p><b>Documenia (Coming soon)</b></p>
+    <p><b>Graphia (Coming soon)</b></p>
+{% endblock %}

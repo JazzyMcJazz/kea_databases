@@ -11,7 +11,7 @@ use std::{
     future::{ready, Ready},
 };
 
-use crate::routes::auth::Claims;
+use crate::utils::{auth::*, app::App};
 
 /// Middleware for authenticating users
 /// Adds the user's ID to the request extensions
@@ -51,10 +51,12 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut context = Context::new();
+        let app = App::from_path(&req.path());
 
         // Add the current path to the context
         context.insert("path", req.path());
         context.insert("next", "/");
+        context.insert("app", &app);
 
         // Add the next path to the context (if it exists)
         req.query_string().split("&").for_each(|q| {
@@ -63,17 +65,47 @@ where
             }
         });
 
-        // Add the user to the context (if they are logged in)
-        if let Some(cookie) = req.cookie("id") {
+        // Add the Relania user to the context (if they are logged in)
+        if let Some(cookie) = req.cookie("rdb_id") {
             let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-            let token_data = jsonwebtoken::decode::<Claims>(
+            let token_data = jsonwebtoken::decode::<RdbClaims>(
                 cookie.value(), 
                 &DecodingKey::from_secret(secret.as_ref()),
                 &jsonwebtoken::Validation::default(),
             );
 
             if let Ok(token) = token_data {
-                context.insert("user", &token.claims);
+                context.insert("rdb_user", &token.claims);
+                req.extensions_mut().insert(token.claims);
+            }
+        }
+
+        // Add the Documenia user to the context (if they are logged in)
+        if let Some(cookie) = req.cookie("ddb_id") {
+            let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+            let token_data = jsonwebtoken::decode::<DdbClaims>(
+                cookie.value(), 
+                &DecodingKey::from_secret(secret.as_ref()),
+                &jsonwebtoken::Validation::default(),
+            );
+
+            if let Ok(token) = token_data {
+                context.insert("ddb_user", &token.claims);
+                req.extensions_mut().insert(token.claims);
+            }
+        }
+
+        // Add the Graphia user to the context (if they are logged in)
+        if let Some(cookie) = req.cookie("ddb_id") {
+            let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+            let token_data = jsonwebtoken::decode::<GdbClaims>(
+                cookie.value(), 
+                &DecodingKey::from_secret(secret.as_ref()),
+                &jsonwebtoken::Validation::default(),
+            );
+
+            if let Ok(token) = token_data {
+                context.insert("gdb_user", &token.claims);
                 req.extensions_mut().insert(token.claims);
             }
         }
@@ -128,11 +160,17 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // If the user is not logged in, redirect them to the login page
-        // It is determined if the user is logged in by checking if the 
-        // request extensions contain a Claims struct (see middleware::AuthenticationMiddleware)
-        if req.extensions().get::<Claims>().is_none() {
-            return Box::pin(async move { Err(AuthError { path: req.path().to_string().clone() }.into()) });
+        let app = App::from_path(&req.path());
+
+        // Check if the user is logged into the relevant app and redirect if not
+        if app.is_rdb && req.extensions().get::<RdbClaims>().is_none() {
+            return Box::pin(async move { Err(AuthError { app, path: req.path().to_string().clone() }.into()) });
+
+        } else if app.is_ddb && req.extensions().get::<DdbClaims>().is_none() {
+            return Box::pin(async move { Err(AuthError { app, path: req.path().to_string().clone() }.into()) });
+
+        } else if app.is_gdb && req.extensions().get::<GdbClaims>().is_none() {
+            return Box::pin(async move { Err(AuthError { app, path: req.path().to_string().clone() }.into()) });
         }
 
         let fut = self.service.call(req);
@@ -145,6 +183,7 @@ where
 
 #[derive(Debug)]
 pub struct AuthError {
+    app: App,
     path: String,
 }
 
@@ -156,10 +195,18 @@ impl fmt::Display for AuthError {
 
 impl ResponseError for AuthError {
     fn error_response(&self) -> HttpResponse {
-        let path = match self.path.as_str() {
-            "" => String::from("/login"),
-            _ => format!("/login?next={}", &self.path),
+        let dest = match self.app {
+            App { is_rdb: true, .. } => "/relania/login",
+            App { is_ddb: true, .. } => "/documenia/login",
+            App { is_gdb: true, .. } => "/graphia/login",
+            _ => "/",
         };
+
+        let path = match self.path.as_str() {
+            "" => String::from(dest),
+            _ => format!("{}?next={}", dest, &self.path),
+        };
+        
         HttpResponse::Found()
             .append_header(("Location", path))
             .finish()
