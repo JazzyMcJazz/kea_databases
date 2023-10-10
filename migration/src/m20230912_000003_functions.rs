@@ -66,6 +66,23 @@ impl MigrationTrait for Migration {
                 RETURN 20;
             END;
         ").await?;
+
+        db.execute_unprepared("-- sql
+            DROP FUNCTION IF EXISTS GetRarityColor;
+            CREATE FUNCTION GetRarityColor(
+                rarity ENUM('Common', 'Rare', 'Epic', 'Legendary')
+            )
+            RETURNS VARCHAR(7)
+            BEGIN
+                CASE
+                    WHEN rarity = 'Common' THEN RETURN 'grey';
+                    WHEN rarity = 'Rare' THEN RETURN 'skyblue';
+                    WHEN rarity = 'Epic' THEN RETURN 'gold';
+                    WHEN rarity = 'Legendary' THEN RETURN 'purple';
+                    ELSE RETURN NULL;
+                END CASE;
+            END;
+        ").await?;
         
         Ok(())
     }
@@ -77,6 +94,7 @@ impl MigrationTrait for Migration {
         db.execute_unprepared("-- sql
             DROP FUNCTION IF EXISTS GetMultiplier;
             DROP FUNCTION IF EXISTS GetCharacterLevel;
+            DROP FUNCTION IF EXISTS GetRarityColor;
         ").await?;
 
         Ok(())

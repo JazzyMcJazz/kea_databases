@@ -75,7 +75,12 @@ fn init(cfg: &mut web::ServiceConfig) {
         .route("/logout", web::get().to(routes::relania::auth::logout))
         .route("/c", web::get().to(routes::relania::character::create_character_view))
         .route("/c", web::post().to(routes::relania::character::create_character))
-        .route("/c/{id}", web::get().to(routes::relania::character::character_list))
+        .route("/c/{id}", web::get().to(routes::relania::character::character_detail))
+        .route("/c/{id}", web::delete().to(routes::relania::character::character_detail))
+        .route("/c/{id}/i", web::post().to(routes::relania::inventory::loot_list))
+        .route("/c/{id}/i/{item_piece_id}", web::put().to(routes::relania::inventory::loot_details))
+        .route("/c/{id}/i/{item_piece_id}", web::patch().to(routes::relania::inventory::loot_details))
+        .route("/c/{id}/i/{item_piece_id}", web::delete().to(routes::relania::inventory::loot_details))
     );
     
     // Default 404

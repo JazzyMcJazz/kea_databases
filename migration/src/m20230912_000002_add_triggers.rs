@@ -65,10 +65,9 @@ impl MigrationTrait for Migration {
                     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'item_slot is NULL';
                 END IF;
                 SELECT EXISTS(
-                    SELECT * FROM item_piece
-                    JOIN item i
-                    WHERE character_id = NEW.character_id AND
-                    i.slot = item_slot
+                    SELECT * FROM item_piece ip
+                    JOIN item i ON ip.item_id = i.id
+                    WHERE character_id = NEW.character_id AND i.slot = item_slot
                 ) INTO slot_occupied;
         
                 IF slot_occupied THEN

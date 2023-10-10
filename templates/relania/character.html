@@ -2,10 +2,17 @@
 
 {% block main %}
     <br>
-    <a href="/relania">Back to character selection</a>
+    <div style="display: flex; justify-content: space-between;">
+        <a href="/relania">Back to character selection</a>
+        <button
+            hx-delete="/relania/c/{{character.id}}"
+            style="color: red; cursor: pointer;"
+        >Delete {{ character.name }}</button>
+    </div>
 
     <h1>{{ character.name }}</h1>
 
+    <p>Experience: {{ character.experience }}</p>
     <p>Level: {{ character.level }}</p>
     <p>Class: {{ character.class }}</p>
     <p>Guild: {% if character.guild %} {{character.guild}} {% else %} none {% endif %}</p>
@@ -18,23 +25,23 @@
                 <tbody>
                     <tr>
                         <td>Head</td>
-                        <td>{% if character.head %} {{character.head}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.head_color}}">{% if character.head_name %} {{character.head_name}} {% else %} none {% endif %}</td>
                     </tr>
                     <tr>
                         <td>Chest</td>
-                        <td>{% if character.chest %} {{character.chest}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.chest_color}}">{% if character.chest_name %} {{character.chest_name}} {% else %} none {% endif %}</td>
                     </tr>
                     <tr>
                         <td>Hands</td>
-                        <td>{% if character.hands %} {{character.hands}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.hands_color}}">{% if character.hands_name %} {{character.hands_name}} {% else %} none {% endif %}</td>
                     </tr>
                     <tr>
                         <td>Legs</td>
-                        <td>{% if character.legs %} {{character.legs}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.legs_color}}">{% if character.legs_name %} {{character.legs_name}} {% else %} none {% endif %}</td>
                     </tr>
                     <tr>
                         <td>Feet</td>
-                        <td>{% if character.feet %} {{character.feet}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.feet_color}}">{% if character.feet_name %} {{character.feet_name}} {% else %} none {% endif %}</td>
                     </tr>
                 </tbody>
             </table>
@@ -46,14 +53,89 @@
                 <tbody>
                     <tr>
                         <td>Mainhand</td>
-                        <td>{% if character.mainhand %} {{character.mainhand}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.mainhand_color}}">{% if character.mainhand_name %} {{character.mainhand_name}} {% else %} none {% endif %}</td>
                     </tr>
                     <tr>
                         <td>Offhand</td>
-                        <td>{% if character.offhand %} {{character.offhand}} {% else %} none {% endif %}</td>
+                        <td style="color: {{character.offhand_color}}">{% if character.offhand_name %} {{character.offhand_name}} {% else %} none {% endif %}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
+
+    <br>
+    <button type="button"
+        hx-post="/relania/c/{{character.id}}/i"
+        style="color: lightgreen; cursor: pointer; font-weight: bold;"
+    >Fight a monster</button>
+    <br>
+    
+    <h2>Inventory</h2>
+    {% if inventory|length == 0 %}
+        <p>Empty</p>
+
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Slot</th>
+                    <th>Rarity</th>
+                    <th>Armor</th>
+                    <th>Damage</th>
+                    <th>Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory %}
+                    <!-- <p>{{ item.name }}, {{ item.slot }}, {{ item.armor_lower }}</p> -->
+                    <tr>
+                        <td style="vertical-align: middle;">{{ item.name }}</td>
+                        <td style="vertical-align: middle;">{{ item.slot }}</td>
+                        <td style="vertical-align: middle; color: {{item.color}}">{{ item.rarity }}</td>
+                        <td style="vertical-align: middle;">
+                            {% if item.armor_upper %}
+                                {{ item.armor_lower }}-{{ item.armor_upper }}
+                            {% endif %}
+                        </td>
+                        <td style="vertical-align: middle;">
+                            {% if item.damage_upper %}
+                                {{ item.damage_lower }}-{{ item.damage_upper }}
+                            {% endif %}
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <button onclick="document.querySelector('#dia-{{item.id}}').showModal()">
+                                •••
+                            </button>
+                        </td>
+                    </tr>
+                    <dialog id="dia-{{item.id}}">
+                        <header>{{item.name}}</header>
+                        <p>Actions</p>
+                        <menu>
+                            <button 
+                                hx-put="/relania/c/{{character.id}}/i/{{item.id}}"
+                                style="color: lightgreen"
+                                {% if not item.can_equip %}disabled{% endif %}
+                            >
+                                Equip
+                            </button>
+                            <button 
+                                hx-delete="/relania/c/{{character.id}}/i/{{item.id}}"
+                                style="color: red"
+                            >
+                                Delete
+                            </button>
+                            <button onclick="document.querySelector('#dia-{{item.id}}').close()">
+                                Close
+                            </button>
+                        </menu>
+                    </dialog>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div style="height: 200px"></div>
 {% endblock %}

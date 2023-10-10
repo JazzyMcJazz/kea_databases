@@ -2,7 +2,7 @@ use actix_web::{web, HttpRequest, HttpResponse, HttpMessage};
 use serde::Deserialize;
 use tera::Context;
 
-use crate::{server::AppState, utils::auth::RdbClaims, repo::rdbms::{character_repo::CharacterRepo, class_repo::ClassRepo}};
+use crate::{server::AppState, utils::auth::RdbClaims, repo::rdbms::{character_repo::CharacterRepo, class_repo::ClassRepo, inventory_repo::InventoryRepo}};
 
 // GET /relania/c
 pub async fn create_character_view(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
@@ -45,8 +45,8 @@ pub async fn create_character(data: web::Data<AppState>, req: HttpRequest, form:
         .finish()
 }
 
-// GET /relania/c/{id}
-pub async fn character_list(data: web::Data<AppState>, req: HttpRequest, path: web::Path<(i32,)>) -> HttpResponse {
+// GET+DELETE /relania/c/{id}
+pub async fn character_detail(data: web::Data<AppState>, req: HttpRequest, path: web::Path<(i32,)>) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
     let ext = { req.extensions() };
@@ -58,6 +58,14 @@ pub async fn character_list(data: web::Data<AppState>, req: HttpRequest, path: w
     };
 
     let id = path.0;
+
+    if req.method() == "DELETE" {
+        let _ = CharacterRepo::delete_by_id(conn, id).await;
+        return HttpResponse::Found()
+            .append_header(("HX-Redirect", "/relania"))
+            .finish();
+    }
+    
     let character = CharacterRepo::get_view_by_id(conn, id).await.unwrap();
     let Some(character) = character else {
         return HttpResponse::NotFound().body("Not found");
@@ -67,7 +75,49 @@ pub async fn character_list(data: web::Data<AppState>, req: HttpRequest, path: w
         return HttpResponse::Unauthorized().body("Unauthorized");
     }
 
+    let inventory = InventoryRepo::find_item_pieces_by_inventory_id(conn, id).await;
+    let Ok(mut inventory) = inventory else {
+        return HttpResponse::InternalServerError().body("Internal server error");
+    };
+    
+    let occupied_slots = {
+        // "Mainhand", "Offhand", "Head", "Chest", "Hands", "Legs", "Feet"
+        let mut slots: Vec<&str> = vec![];
+        if character.head_id.is_some() {
+            slots.push("Head");
+        }
+        if character.chest_id.is_some() {
+            slots.push("Chest");
+        }
+        if character.hands_id.is_some() {
+            slots.push("Hands");
+        }
+        if character.legs_id.is_some() {
+            slots.push("Legs");
+        }
+        if character.feet_id.is_some() {
+            slots.push("Feet");
+        }
+        if character.mainhand_id.is_some() {
+            slots.push("Mainhand");
+        }
+        if character.offhand_id.is_some() {
+            slots.push("Offhand");
+        }
+        
+        slots
+    };
+
+    for item in inventory.iter_mut() {
+        // println!("{:#?}", item.slot);
+        // println!("{:#?}", occupied_slots);
+        // println!("{:#?}", occupied_slots.contains(&item.slot.as_str()));
+        // println!("");
+        item.can_equip = Some(!occupied_slots.contains(&item.slot.as_str()));
+    }
+
     context.insert("character", &character);
+    context.insert("inventory", &inventory);
     // context.insert("is_owner", &character["account_id"] == claims.sub);
 
     let Ok(html) = tera.render("relania/character.html", &context) else {
