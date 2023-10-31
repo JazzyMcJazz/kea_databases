@@ -9,7 +9,7 @@ use crate::{
     repo::ddbms::account_repo::SurrealAccountRepo,
     server::AppState,
     utils::{
-        auth::{Claims, DdbClaims},
+        claims::{Claims, DdbClaims},
         extensions::Extensions,
     },
 };

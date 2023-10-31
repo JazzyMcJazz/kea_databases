@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-pub trait Claims {
-    fn new(sub: String, username: String) -> Self
+pub trait Claims<T> {
+    fn new(sub: T, username: String) -> Self
     where
         Self: Sized;
 }
@@ -13,9 +13,8 @@ pub struct RdbClaims {
     exp: usize,
 }
 
-impl Claims for RdbClaims {
-    fn new(sub: String, username: String) -> Self {
-        let sub = sub.parse::<i32>().unwrap();
+impl Claims<i32> for RdbClaims {
+    fn new(sub: i32, username: String) -> Self {
         let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
         Self {
             sub,
@@ -32,7 +31,7 @@ pub struct DdbClaims {
     exp: usize,
 }
 
-impl Claims for DdbClaims {
+impl Claims<String> for DdbClaims {
     fn new(sub: String, username: String) -> Self {
         let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
         Self {

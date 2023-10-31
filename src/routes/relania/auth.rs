@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 use crate::entity::account;
 use crate::server::AppState;
-use crate::utils::auth::{Claims, RdbClaims};
+use crate::utils::claims::{Claims, RdbClaims};
 use crate::utils::extensions::Extensions;
 
 const COOKIE_NAME: &str = "rdb_id";
@@ -170,7 +170,7 @@ fn auth_token(id: i32, username: String) -> Result<String, ()> {
 
     let key = EncodingKey::from_secret(secret.as_ref());
 
-    let claims = RdbClaims::new(id.to_string(), username);
+    let claims = RdbClaims::new(id, username);
 
     let Ok(token) = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &claims, &key) else {
         eprintln!("Auth Error: Failed to encode JWT");

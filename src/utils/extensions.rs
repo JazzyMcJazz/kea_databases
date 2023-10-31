@@ -1,12 +1,12 @@
 use actix_web::{HttpMessage, HttpRequest};
 use tera::Context;
 
-use super::auth::Claims;
+use super::claims::Claims;
 
 pub struct Extensions;
 
 impl Extensions {
-    pub fn unwrap_claims<T: Claims + Clone + 'static>(req: &HttpRequest) -> T {
+    pub fn unwrap_claims<K, T: Claims<K> + Clone + 'static>(req: &HttpRequest) -> T {
         let ext = req.extensions();
         ext.get::<T>().cloned().unwrap()
     }
@@ -16,7 +16,7 @@ impl Extensions {
         ext.get::<Context>().cloned().unwrap_or(Context::new())
     }
 
-    pub fn unwrap_claims_and_context<T: Claims + Clone + 'static>(
+    pub fn unwrap_claims_and_context<K, T: Claims<K> + Clone + 'static>(
         req: &HttpRequest,
     ) -> (T, Context) {
         let ext = req.extensions();

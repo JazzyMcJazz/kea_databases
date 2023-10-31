@@ -11,7 +11,7 @@ use std::{
 };
 use tera::Context;
 
-use crate::utils::{app::App, auth::*};
+use crate::utils::{app::App, claims::*};
 
 /// Middleware for authenticating users
 /// Adds the user's ID to the request extensions

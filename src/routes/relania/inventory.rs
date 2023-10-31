@@ -3,7 +3,7 @@ use actix_web::{http::Method, web, HttpRequest, HttpResponse};
 use crate::{
     repo::rdbms::{character_repo::CharacterRepo, item_piece_repo::ItemPieceRepo},
     server::AppState,
-    utils::{auth::RdbClaims, extensions::Extensions},
+    utils::{claims::RdbClaims, extensions::Extensions},
 };
 
 // POST /relania/c/{id}/i
@@ -13,7 +13,7 @@ pub async fn loot_list(
     req: HttpRequest,
 ) -> HttpResponse {
     let conn = &data.conn;
-    let claims = Extensions::unwrap_claims::<RdbClaims>(&req);
+    let claims = Extensions::unwrap_claims::<i32, RdbClaims>(&req);
 
     let Ok(is_owner) = CharacterRepo::exists_by_id_and_account_id(conn, path.0, claims.sub).await
     else {
@@ -38,7 +38,7 @@ pub async fn loot_details(
     req: HttpRequest,
 ) -> HttpResponse {
     let conn = &data.conn;
-    let claims = Extensions::unwrap_claims::<RdbClaims>(&req);
+    let claims = Extensions::unwrap_claims::<i32, RdbClaims>(&req);
 
     let Ok(is_owner) = CharacterRepo::exists_by_id_and_account_id(conn, path.0, claims.sub).await
     else {
