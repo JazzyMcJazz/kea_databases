@@ -1,20 +1,27 @@
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait, QueryFilter, ColumnTrait, JoinType, QuerySelect, RelationTrait};
-use crate::entity::{item_piece::{Entity as ItemPiece, self}, item};
+use crate::entity::{
+    item,
+    item_piece::{self, Entity as ItemPiece},
+};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, DbErr, EntityTrait, JoinType, QueryFilter, QuerySelect,
+    RelationTrait,
+};
 
 use super::custom_models::InventoryOverviewItem;
-
 
 pub struct InventoryRepo;
 
 impl InventoryRepo {
-    pub async fn find_item_pieces_by_inventory_id(conn: &DatabaseConnection, id: i32) -> Result<Vec<InventoryOverviewItem>, DbErr> {
+    pub async fn find_item_pieces_by_inventory_id(
+        conn: &DatabaseConnection,
+        id: i32,
+    ) -> Result<Vec<InventoryOverviewItem>, DbErr> {
         let mut inventory = ItemPiece::find()
             .filter(item_piece::Column::InventoryId.eq(id))
             .column_as(item::Column::Name, "name")
             .column_as(item::Column::Slot, "slot")
             .column_as(item::Column::Rarity, "rarity")
-            .join(JoinType::Join, item_piece::Relation::Item.def(),
-            )
+            .join(JoinType::Join, item_piece::Relation::Item.def())
             .into_model::<InventoryOverviewItem>()
             .all(conn)
             .await?;

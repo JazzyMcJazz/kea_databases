@@ -1,11 +1,11 @@
 use std::env;
 
-mod middleware;
-mod server;
-mod routes;
 mod entity;
-mod utils;
+mod middleware;
 mod repo;
+mod routes;
+mod server;
+mod utils;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "full");

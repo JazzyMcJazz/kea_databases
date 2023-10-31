@@ -2,9 +2,17 @@
 
 {% block main %}
     
-    <h1>Register new account on Relania</h1>
+    <h1>Register new account on Documenia</h1>
     
-    <form action="/relania/register" method="POST">
+    <form 
+        action="/documenia/register" 
+        method="POST"
+        hx-ext="response-targets"
+        hx-post="/documenia/register"
+        hx-target-200="body"
+        hx-target-400="#error"
+        hx-target-409="#error"
+    >
         <label for="username">Username</label>
         <input type="text" name="username" id="username" required />
         <label for="password">Password</label>
@@ -14,5 +22,7 @@
         <input type="submit" value="Register" />
     </form>
 
-    <p>Already have an account? <a href="/relania/login">Login</a></p>
+    <p id="error" style="color: red;"></p>
+
+    <p>Already have an account? <a href="/documenia/login">Login</a></p>
 {% endblock %}

@@ -5,13 +5,13 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 use jsonwebtoken::DecodingKey;
-use tera::Context;
 use std::{
     env, fmt,
     future::{ready, Ready},
 };
+use tera::Context;
 
-use crate::utils::{auth::*, app::App};
+use crate::utils::{app::App, auth::*};
 
 /// Middleware for authenticating users
 /// Adds the user's ID to the request extensions
@@ -51,7 +51,7 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut context = Context::new();
-        let app = App::from_path(&req.path());
+        let app = App::from_path(req.path());
 
         // Add the current path to the context
         context.insert("path", req.path());
@@ -59,9 +59,9 @@ where
         context.insert("app", &app);
 
         // Add the next path to the context (if it exists)
-        req.query_string().split("&").for_each(|q| {
+        req.query_string().split('&').for_each(|q| {
             if q.contains("next=") {
-                context.insert("next", q.split("=").last().unwrap_or("/"));
+                context.insert("next", q.split('=').last().unwrap_or("/"));
             }
         });
 
@@ -69,7 +69,7 @@ where
         if let Some(cookie) = req.cookie("rdb_id") {
             let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
             let token_data = jsonwebtoken::decode::<RdbClaims>(
-                cookie.value(), 
+                cookie.value(),
                 &DecodingKey::from_secret(secret.as_ref()),
                 &jsonwebtoken::Validation::default(),
             );
@@ -84,7 +84,7 @@ where
         if let Some(cookie) = req.cookie("ddb_id") {
             let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
             let token_data = jsonwebtoken::decode::<DdbClaims>(
-                cookie.value(), 
+                cookie.value(),
                 &DecodingKey::from_secret(secret.as_ref()),
                 &jsonwebtoken::Validation::default(),
             );
@@ -99,7 +99,7 @@ where
         if let Some(cookie) = req.cookie("ddb_id") {
             let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
             let token_data = jsonwebtoken::decode::<GdbClaims>(
-                cookie.value(), 
+                cookie.value(),
                 &DecodingKey::from_secret(secret.as_ref()),
                 &jsonwebtoken::Validation::default(),
             );
@@ -122,7 +122,6 @@ where
         })
     }
 }
-
 
 impl<S, B> Transform<S, ServiceRequest> for Authorization
 where
@@ -160,17 +159,33 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        let app = App::from_path(&req.path());
+        let app = App::from_path(req.path());
 
         // Check if the user is logged into the relevant app and redirect if not
         if app.is_rdb && req.extensions().get::<RdbClaims>().is_none() {
-            return Box::pin(async move { Err(AuthError { app, path: req.path().to_string().clone() }.into()) });
-
+            return Box::pin(async move {
+                Err(AuthError {
+                    app,
+                    path: req.path().to_string().clone(),
+                }
+                .into())
+            });
         } else if app.is_ddb && req.extensions().get::<DdbClaims>().is_none() {
-            return Box::pin(async move { Err(AuthError { app, path: req.path().to_string().clone() }.into()) });
-
+            return Box::pin(async move {
+                Err(AuthError {
+                    app,
+                    path: req.path().to_string().clone(),
+                }
+                .into())
+            });
         } else if app.is_gdb && req.extensions().get::<GdbClaims>().is_none() {
-            return Box::pin(async move { Err(AuthError { app, path: req.path().to_string().clone() }.into()) });
+            return Box::pin(async move {
+                Err(AuthError {
+                    app,
+                    path: req.path().to_string().clone(),
+                }
+                .into())
+            });
         }
 
         let fut = self.service.call(req);
@@ -206,7 +221,7 @@ impl ResponseError for AuthError {
             "" => String::from(dest),
             _ => format!("{}?next={}", dest, &self.path),
         };
-        
+
         HttpResponse::Found()
             .append_header(("Location", path))
             .finish()

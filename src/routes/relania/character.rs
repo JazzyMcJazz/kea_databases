@@ -1,17 +1,21 @@
-use actix_web::{web, HttpRequest, HttpResponse, HttpMessage};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
-use tera::Context;
 
-use crate::{server::AppState, utils::auth::RdbClaims, repo::rdbms::{character_repo::CharacterRepo, class_repo::ClassRepo, inventory_repo::InventoryRepo}};
+use crate::{
+    repo::rdbms::{
+        character_repo::CharacterRepo, class_repo::ClassRepo, inventory_repo::InventoryRepo,
+    },
+    server::AppState,
+    utils::{auth::RdbClaims, extensions::Extensions},
+};
 
 // GET /relania/c
 pub async fn create_character_view(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
-    let ext = { req.extensions() };
 
     let classes = ClassRepo::all(conn).await.unwrap();
-    let mut context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
+    let mut context = Extensions::unwrap_context(&req);
     context.insert("classes", &classes);
 
     let Ok(html) = tera.render("relania/create_character.html", &context) else {
@@ -28,15 +32,18 @@ pub struct CreateCharacterForm {
 }
 
 // POST /relania/c
-pub async fn create_character(data: web::Data<AppState>, req: HttpRequest, form: web::Form<CreateCharacterForm>) -> HttpResponse {
+pub async fn create_character(
+    data: web::Data<AppState>,
+    req: HttpRequest,
+    form: web::Form<CreateCharacterForm>,
+) -> HttpResponse {
     let conn = &data.conn;
-    let ext = { req.extensions() };
 
-    let Some(claims) = ext.get::<RdbClaims>() else {
-        return HttpResponse::Unauthorized().body("Unauthorized");
-    };
+    let claims = Extensions::unwrap_claims::<RdbClaims>(&req);
 
-    let Ok(character_id) = CharacterRepo::create(conn, &form.character_name, form.class_id, claims.sub).await else {
+    let Ok(character_id) =
+        CharacterRepo::create(conn, &form.character_name, form.class_id, claims.sub).await
+    else {
         return HttpResponse::Conflict().body("Character name is unavailable");
     };
 
@@ -46,16 +53,14 @@ pub async fn create_character(data: web::Data<AppState>, req: HttpRequest, form:
 }
 
 // GET+DELETE /relania/c/{id}
-pub async fn character_detail(data: web::Data<AppState>, req: HttpRequest, path: web::Path<(i32,)>) -> HttpResponse {
+pub async fn character_detail(
+    data: web::Data<AppState>,
+    req: HttpRequest,
+    path: web::Path<(i32,)>,
+) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
-    let ext = { req.extensions() };
-
-    let mut context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
-
-    let Some(claims) = ext.get::<RdbClaims>() else {
-        return HttpResponse::Unauthorized().body("Unauthorized");
-    };
+    let (claims, mut context) = Extensions::unwrap_claims_and_context::<RdbClaims>(&req);
 
     let id = path.0;
 
@@ -65,7 +70,7 @@ pub async fn character_detail(data: web::Data<AppState>, req: HttpRequest, path:
             .append_header(("HX-Redirect", "/relania"))
             .finish();
     }
-    
+
     let character = CharacterRepo::get_view_by_id(conn, id).await.unwrap();
     let Some(character) = character else {
         return HttpResponse::NotFound().body("Not found");
@@ -79,7 +84,7 @@ pub async fn character_detail(data: web::Data<AppState>, req: HttpRequest, path:
     let Ok(mut inventory) = inventory else {
         return HttpResponse::InternalServerError().body("Internal server error");
     };
-    
+
     let occupied_slots = {
         // "Mainhand", "Offhand", "Head", "Chest", "Hands", "Legs", "Feet"
         let mut slots: Vec<&str> = vec![];
@@ -104,7 +109,7 @@ pub async fn character_detail(data: web::Data<AppState>, req: HttpRequest, path:
         if character.offhand_id.is_some() {
             slots.push("Offhand");
         }
-        
+
         slots
     };
 

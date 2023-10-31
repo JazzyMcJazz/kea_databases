@@ -1,26 +1,30 @@
-use actix_web::{cookie, cookie::Cookie, web, HttpRequest, HttpResponse};
-use chrono;
-use jsonwebtoken::{self, EncodingKey};
-use migration::sea_orm::*;
-use sea_orm::{EntityTrait, QueryFilter, Set};
+use actix_web::{
+    cookie::{self, Cookie},
+    web, HttpRequest, HttpResponse,
+};
+use jsonwebtoken::EncodingKey;
 use serde::Deserialize;
 
-use crate::entity::account;
-use crate::server::AppState;
-use crate::utils::auth::{Claims, RdbClaims};
-use crate::utils::extensions::Extensions;
+use crate::{
+    repo::ddbms::account_repo::SurrealAccountRepo,
+    server::AppState,
+    utils::{
+        auth::{Claims, DdbClaims},
+        extensions::Extensions,
+    },
+};
 
-const COOKIE_NAME: &str = "rdb_id";
+const COOKIE_NAME: &str = "ddb_id";
 const LOGIN_ERROR: &str = "Invalid username or password";
-const DEFAULT_REDIRECT: &str = "/relania";
+const DEFAULT_REDIRECT: &str = "/documenia";
 
-// GET /relania/login
+// GET /documenia/login
 pub async fn login_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
 
     let context = Extensions::unwrap_context(&req);
 
-    let Ok(html) = tera.render("relania/auth/login.html", &context) else {
+    let Ok(html) = tera.render("documenia/auth/login.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 
@@ -44,29 +48,20 @@ pub async fn login(
     form: web::Form<LoginForm>,
     q: web::Query<PathQuery>,
 ) -> HttpResponse {
-    let conn = &data.conn;
+    let db = &data.surreal;
 
-    let Ok(acc) = account::Entity::find()
-        .filter(account::Column::Username.eq(&form.username))
-        .one(conn)
-        .await
+    let Ok(acc) =
+        SurrealAccountRepo::find_by_credentials(db, form.username.clone(), form.password.clone())
+            .await
     else {
-        return HttpResponse::Unauthorized().body(LOGIN_ERROR);
+        return HttpResponse::InternalServerError().body("Internal Server Error");
     };
 
     let Some(acc) = acc else {
         return HttpResponse::Unauthorized().body(LOGIN_ERROR);
     };
 
-    let Ok(password_match) = bcrypt::verify(&form.password, &acc.password) else {
-        return HttpResponse::Unauthorized().body(LOGIN_ERROR);
-    };
-
-    if !password_match {
-        return HttpResponse::Unauthorized().body(LOGIN_ERROR);
-    }
-
-    let Ok(token) = auth_token(acc.id, acc.username) else {
+    let Ok(token) = auth_token(acc.id.id.to_string(), acc.username) else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
 
@@ -78,18 +73,18 @@ pub async fn login(
     };
 
     HttpResponse::Found()
-        .append_header(("Location", location))
+        .append_header(("HX-Redirect", location))
         .cookie(cookie)
         .finish()
 }
 
-// GET /relania/register
+// GET /documenia/register
 pub async fn register_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
 
     let context = Extensions::unwrap_context(&req);
 
-    let Ok(html) = tera.render("relania/auth/register.html", &context) else {
+    let Ok(html) = tera.render("documenia/auth/register.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 
@@ -117,30 +112,25 @@ pub async fn register(data: web::Data<AppState>, form: web::Form<RegisterForm>) 
         return HttpResponse::BadRequest().body("Password must be at least 6 characters long");
     }
 
-    let current_time = chrono::Utc::now();
+    let db = &data.surreal;
+    let account =
+        match SurrealAccountRepo::create_account(db, form.username.clone(), form.password.clone())
+            .await
+        {
+            Ok(account) => account,
+            Err(_) => {
+                return HttpResponse::Conflict().body("Username already exists");
+            }
+        };
 
-    let password_hash = bcrypt::hash(&form.password, bcrypt::DEFAULT_COST).unwrap();
-
-    let acc = account::ActiveModel {
-        username: Set(form.username.clone()),
-        password: Set(password_hash),
-        last_login: Set(current_time),
-        ..Default::default()
-    };
-
-    let conn = &data.conn;
-    let Ok(result) = account::Entity::insert(acc).exec(conn).await else {
-        return HttpResponse::InternalServerError().body("Username already exists");
-    };
-
-    let Ok(token) = auth_token(result.last_insert_id, form.username.clone()) else {
+    let Ok(token) = auth_token(account.id.id.to_string(), form.username.clone()) else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
 
     let cookie = Cookie::new(COOKIE_NAME, token);
 
     HttpResponse::Found()
-        .append_header(("Location", DEFAULT_REDIRECT))
+        .append_header(("HX-Redirect", DEFAULT_REDIRECT))
         .cookie(cookie)
         .finish()
 }
@@ -162,7 +152,7 @@ pub async fn logout(q: web::Query<PathQuery>) -> HttpResponse {
         .finish()
 }
 
-fn auth_token(id: i32, username: String) -> Result<String, ()> {
+fn auth_token(id: String, username: String) -> Result<String, ()> {
     let Ok(secret) = std::env::var("JWT_SECRET") else {
         eprintln!("Auth Error: JWT_SECRET is not set in .env file");
         return Err(());
@@ -170,7 +160,7 @@ fn auth_token(id: i32, username: String) -> Result<String, ()> {
 
     let key = EncodingKey::from_secret(secret.as_ref());
 
-    let claims = RdbClaims::new(id.to_string(), username);
+    let claims = DdbClaims::new(id, username);
 
     let Ok(token) = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &claims, &key) else {
         eprintln!("Auth Error: Failed to encode JWT");

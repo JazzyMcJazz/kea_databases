@@ -1,21 +1,20 @@
-use actix_web::{HttpResponse, HttpRequest, web, HttpMessage};
-use tera::Context;
+use actix_web::{web, HttpRequest, HttpResponse};
 
-use crate::{server::AppState, utils::auth::RdbClaims, repo::rdbms::character_repo::CharacterRepo};
+use crate::{
+    repo::rdbms::character_repo::CharacterRepo,
+    server::AppState,
+    utils::{auth::RdbClaims, extensions::Extensions},
+};
 
 // GET /relania
 pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
-    let ext = { req.extensions() };
+    let (claims, mut context) = Extensions::unwrap_claims_and_context::<RdbClaims>(&req);
 
-    let mut context = ext.get::<Context>().unwrap_or(&Context::new()).to_owned();
-
-    let Some(claims) = ext.get::<RdbClaims>() else {
-        return HttpResponse::Unauthorized().body("Unauthorized");
-    };
-
-    let characters = CharacterRepo::get_by_account_id(conn, claims.sub).await.unwrap();
+    let characters = CharacterRepo::get_by_account_id(conn, claims.sub)
+        .await
+        .unwrap();
     context.insert("characters", &characters);
 
     let Ok(html) = tera.render("relania/index.html", &context) else {

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <h1>Hello, {{ ddb_user.username }}</h1>
+    <h2>Welcome to Documenia</h2>
+
+    <br>
+
+    <h3>Choose a character or <a href="/documenia/c">create a new one</a></h3>
+    <table>
+        <tbody>
+            {% for character in characters %}
+                    <tr>
+                        <td><a href="/documenia/c/{{ character.id }}">{{ character.name }}</a></td>
+                        <td>{{ character.class }}</td>
+                    </tr>
+                </a>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

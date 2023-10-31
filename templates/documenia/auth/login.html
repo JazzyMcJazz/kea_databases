@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <h1>Login to Documenia</h1>
+    
+    <form 
+        action="/documenia/login?next={{next}}" 
+        method="POST"
+        hx-ext="response-targets"
+        hx-post="/documenia/login?next={{next}}"
+        hx-target-401="#error"
+        hx-target-5*="#error"
+        >
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" required />
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required />
+        <input type="submit" value="Login" />
+    </form>
+
+    <p id="error" style="color: red;"></p>
+
+    <p>Don't have an account? <a href="/documenia/register">Register</a></p>
+{% endblock %}

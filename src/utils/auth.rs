@@ -1,31 +1,46 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+pub trait Claims {
+    fn new(sub: String, username: String) -> Self
+    where
+        Self: Sized;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RdbClaims {
     pub sub: i32,
     username: String,
     exp: usize,
 }
 
-impl RdbClaims {
-    pub fn new(sub: i32, username: String) -> Self {
+impl Claims for RdbClaims {
+    fn new(sub: String, username: String) -> Self {
+        let sub = sub.parse::<i32>().unwrap();
         let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
-        Self { sub, username, exp: exp as usize }
+        Self {
+            sub,
+            username,
+            exp: exp as usize,
+        }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DdbClaims {
-    pub sub: i32,
+    pub sub: String,
     username: String,
     exp: usize,
 }
 
-impl DdbClaims {
-    // pub fn new(sub: i32, username: String) -> Self {
-    //     let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
-    //     Self { sub, username, exp: exp as usize }
-    // }
+impl Claims for DdbClaims {
+    fn new(sub: String, username: String) -> Self {
+        let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
+        Self {
+            sub,
+            username,
+            exp: exp as usize,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
