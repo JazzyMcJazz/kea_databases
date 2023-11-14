@@ -10,7 +10,7 @@ use crate::{
 pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
-    let (claims, mut context) = Extensions::unwrap_claims_and_context::<i32, RdbClaims>(&req);
+    let (claims, mut context) = Extensions::unwrap_claims_and_context::<RdbClaims, i32>(&req);
 
     let characters = CharacterRepo::get_by_account_id(conn, claims.sub)
         .await

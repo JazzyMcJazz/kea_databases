@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use surrealdb::{engine::any::Any, Error, Surreal};
 
 use crate::repo::ddbms::models::Account;
@@ -30,28 +32,44 @@ impl SurrealAccountRepo {
         db: &Surreal<Any>,
         username: String,
         password: String,
-    ) -> Result<Account, Error> {
-        let mut result = db
-            .query(
-                "
-            let $password_hash = crypto::argon2::generate($password);
+    ) -> Result<Account, &'static str> {
+        let Ok(mut result) = db
+            .query("SELECT username FROM account WHERE username = $username")
+            .bind(("username", &username))
+            .await
+        else {
+            return Err("Failed to create account (E1001)");
+        };
 
-            CREATE account CONTENT {
-                username: $username,
-                password: $password_hash,
-                last_login: time::now(),
-            }
-        ",
+        let existing: Option<HashMap<String, String>> = match result.take(0) {
+            Ok(existing) => existing,
+            Err(_) => return Err("Failed to create account (E1002)"),
+        };
+
+        if existing.is_some() {
+            return Err("Username already exists");
+        }
+
+        let Ok(mut result) = db
+            .query(
+                r#"
+                CREATE account CONTENT {
+                    username: $username,
+                    password: crypto::argon2::generate($password),
+                    last_login: time::now(),
+                }
+            "#,
             )
             .bind(("password", &password))
             .bind(("username", &username))
-            .await?;
+            .await
+        else {
+            return Err("Failed to create account (E1003)");
+        };
 
-        let created: Option<Account> = match result.take(1) {
+        let created: Option<Account> = match result.take(0) {
             Ok(created) => created,
-            Err(e) => {
-                return Err(e);
-            }
+            Err(_) => return Err("Failed to create account (E1004)"),
         };
 
         Ok(created.unwrap())

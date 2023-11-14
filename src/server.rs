@@ -14,7 +14,9 @@ use surrealdb::{
 use tera::Tera;
 use tracing::log;
 
-use crate::{middleware, repo::ddbms::Repo, routes};
+use crate::{middleware, repo::ddbms::Repo, routes, utils::traits::Terafy};
+
+impl Terafy for Tera {}
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -52,8 +54,8 @@ async fn start() -> std::io::Result<()> {
         .await
         .unwrap();
 
-    // surreal.surreal_clear().await; // TODO: Remove this line
-    surreal.surreal_init().await;
+    // surreal.surreal_clear("documenia").await;
+    surreal.documenia_init().await;
 
     // Initialize Tera template engine
     let Ok(tera) = Tera::new("templates/**/*") else {
@@ -115,7 +117,7 @@ fn init(cfg: &mut web::ServiceConfig) {
             .route("/logout", web::get().to(routes::relania::auth::logout))
             .route(
                 "/c",
-                web::get().to(routes::relania::character::create_character_view),
+                web::get().to(routes::relania::character::create_character_page),
             )
             .route(
                 "/c",
@@ -170,7 +172,15 @@ fn init(cfg: &mut web::ServiceConfig) {
         web::scope("/documenia")
             .wrap(middleware::Authorization)
             .route("", web::get().to(routes::documenia::index::index))
-            .route("/logout", web::get().to(routes::documenia::auth::logout)),
+            .route("/logout", web::get().to(routes::documenia::auth::logout))
+            .route(
+                "/c",
+                web::get().to(routes::documenia::character::create_character_page),
+            )
+            .route(
+                "/c",
+                web::post().to(routes::documenia::character::create_character),
+            ),
     );
 
     // Default 404

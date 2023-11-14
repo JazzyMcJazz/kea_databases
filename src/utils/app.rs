@@ -8,6 +8,18 @@ pub struct App {
 }
 
 impl App {
+    pub fn get_world(&self) -> &str {
+        if self.is_rdb {
+            "Relania"
+        } else if self.is_ddb {
+            "Documenia"
+        } else if self.is_gdb {
+            "Graphia"
+        } else {
+            ""
+        }
+    }
+
     pub fn from_path(path: &str) -> Self {
         let mut app = App {
             is_rdb: false,

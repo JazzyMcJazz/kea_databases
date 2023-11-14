@@ -118,9 +118,7 @@ pub async fn register(data: web::Data<AppState>, form: web::Form<RegisterForm>) 
             .await
         {
             Ok(account) => account,
-            Err(_) => {
-                return HttpResponse::Conflict().body("Username already exists");
-            }
+            Err(e) => return HttpResponse::Conflict().body(e),
         };
 
     let Ok(token) = auth_token(account.id.id.to_string(), form.username.clone()) else {

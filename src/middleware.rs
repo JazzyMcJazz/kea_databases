@@ -57,6 +57,7 @@ where
         context.insert("path", req.path());
         context.insert("next", "/");
         context.insert("app", &app);
+        context.insert("world", app.get_world());
 
         // Add the next path to the context (if it exists)
         req.query_string().split('&').for_each(|q| {

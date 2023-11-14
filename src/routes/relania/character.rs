@@ -10,7 +10,7 @@ use crate::{
 };
 
 // GET /relania/c
-pub async fn create_character_view(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
+pub async fn create_character_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
 
@@ -39,7 +39,7 @@ pub async fn create_character(
 ) -> HttpResponse {
     let conn = &data.conn;
 
-    let claims = Extensions::unwrap_claims::<i32, RdbClaims>(&req);
+    let claims = Extensions::unwrap_claims::<RdbClaims, i32>(&req);
 
     let Ok(character_id) =
         CharacterRepo::create(conn, &form.character_name, form.class_id, claims.sub).await
@@ -60,7 +60,7 @@ pub async fn character_detail(
 ) -> HttpResponse {
     let tera = &data.tera;
     let conn = &data.conn;
-    let (claims, mut context) = Extensions::unwrap_claims_and_context::<i32, RdbClaims>(&req);
+    let (claims, mut context) = Extensions::unwrap_claims_and_context::<RdbClaims, i32>(&req);
 
     let id = path.0;
 

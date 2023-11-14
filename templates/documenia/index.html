@@ -11,8 +11,8 @@
         <tbody>
             {% for character in characters %}
                     <tr>
-                        <td><a href="/documenia/c/{{ character.id }}">{{ character.name }}</a></td>
-                        <td>{{ character.class }}</td>
+                        <td><a href="/documenia/c/{{ character.uid }}">{{ character.name }}</a></td>
+                        <td>{{ character.class.name }}</td>
                     </tr>
                 </a>
             {% endfor %}

@@ -6,7 +6,10 @@ use super::claims::Claims;
 pub struct Extensions;
 
 impl Extensions {
-    pub fn unwrap_claims<K, T: Claims<K> + Clone + 'static>(req: &HttpRequest) -> T {
+    pub fn unwrap_claims<T, K>(req: &HttpRequest) -> T
+    where
+        T: Claims<K> + Clone + 'static,
+    {
         let ext = req.extensions();
         ext.get::<T>().cloned().unwrap()
     }
@@ -16,9 +19,10 @@ impl Extensions {
         ext.get::<Context>().cloned().unwrap_or(Context::new())
     }
 
-    pub fn unwrap_claims_and_context<K, T: Claims<K> + Clone + 'static>(
-        req: &HttpRequest,
-    ) -> (T, Context) {
+    pub fn unwrap_claims_and_context<T, K>(req: &HttpRequest) -> (T, Context)
+    where
+        T: Claims<K> + Clone + 'static,
+    {
         let ext = req.extensions();
 
         let claims = ext.get::<T>().cloned().unwrap();

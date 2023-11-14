@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    
+    <br>
+    <a href="/documenia">Back to character selection</a>
+
+    <br><br><br>
+    
+    <form
+        hx-ext="response-targets"
+        hx-post="/documenia/c"
+        hx-target-4*="#error"
+        hx-target-5*="#error"
+    >
+        
+        <div style="display: flex;">
+            <span>
+                <label for="character_name">Choose a name</label>
+                <input type="text" name="character_name" id="character_name" required />
+            </span>
+            <span>
+                <label for="class">Choose a class</label>
+                <select name="class_id" id="class_id" required>
+                    <option disabled hidden selected value>---</option>
+                    {% for class in classes %}
+                        <option value="{{ class.uid }}">{{ class.name }}</option>
+                    {% endfor %}
+                </select>
+            </span>
+        </div>
+
+        <br>
+        <button type="submit">Create character</button>
+    </form>
+    
+    <p id="error" style="color:red"></p>
+{% endblock %}
