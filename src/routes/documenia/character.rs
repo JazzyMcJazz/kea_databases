@@ -1,11 +1,15 @@
+use std::collections::HashMap;
+
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
 use crate::{
-    repo::ddbms::{character_repo::CharacterRepo, class_repo::ClassRepo},
+    repo::ddbms::{character_repo::CharacterRepo, class_repo::ClassRepo, enums::{Slot, Rarity}},
     server::AppState,
-    utils::{claims::DdbClaims, extensions::Extensions, traits::Terafy},
+    utils::{claims::DdbClaims, extensions::Extensions, traits::{Terafy, Thingify}},
 };
+
+type EquippedGear<'a> = HashMap::<Slot, HashMap<String, String>>;
 
 // GET /documenia/c
 pub async fn create_character_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
@@ -52,82 +56,107 @@ pub async fn create_character(
 }
 
 // GET+DELETE /documenia/c/{id}
-pub async fn _character_detail(
+pub async fn character_detail(
     data: web::Data<AppState>,
     req: HttpRequest,
-    path: web::Path<(i32,)>,
+    path: web::Path<(String,)>,
 ) -> HttpResponse {
     let tera = &data.tera;
     
-    let _conn = &data.conn;
-    let (_claims, context) = Extensions::unwrap_claims_and_context::<DdbClaims, String>(&req);
+    let conn = &data.surreal;
+    let (claims, mut context) = Extensions::unwrap_claims_and_context::<DdbClaims, String>(&req);
 
-    let _id = path.0;
+    let id = &path.0;
 
     if req.method() == "DELETE" {
-        // let _ = CharacterRepo::delete_by_id(conn, id).await;
-        // return HttpResponse::Found()
-        //     .append_header(("HX-Redirect", "/documenia"))
-        //     .finish();
+        let _ = CharacterRepo::delete_by_id(conn, id).await;
+        return HttpResponse::Found()
+            .append_header(("HX-Redirect", "/documenia"))
+            .finish();
     }
 
-    // let character = CharacterRepo::get_view_by_id(conn, id).await.unwrap();
-    // let Some(character) = character else {
-    //     return HttpResponse::NotFound().body("Not found");
-    // };
+    let character = CharacterRepo::get_by_id(conn, id).await.expect("Error getting character");
+    let Some(mut character) = character else {
+        return HttpResponse::NotFound().body("Not found");
+    };
 
-    // if character.account_id != claims.sub {
-    //     return HttpResponse::Unauthorized().body("Unauthorized");
-    // }
+    character.thingify();
 
-    // let inventory = todo!();//InventoryRepo::find_item_pieces_by_inventory_id(conn, id).await;
-    // let Ok(mut inventory) = inventory else {
-    //     return HttpResponse::InternalServerError().body("Internal server error");
-    // };
+    if character.account_id != claims.sub {
+        return HttpResponse::Unauthorized().body("Unauthorized");
+    }
 
-    // let occupied_slots = {
-    //     // "Mainhand", "Offhand", "Head", "Chest", "Hands", "Legs", "Feet"
-    //     let mut slots: Vec<&str> = vec![];
-    //     if character.head_id.is_some() {
-    //         slots.push("Head");
-    //     }
-    //     if character.chest_id.is_some() {
-    //         slots.push("Chest");
-    //     }
-    //     if character.hands_id.is_some() {
-    //         slots.push("Hands");
-    //     }
-    //     if character.legs_id.is_some() {
-    //         slots.push("Legs");
-    //     }
-    //     if character.feet_id.is_some() {
-    //         slots.push("Feet");
-    //     }
-    //     if character.mainhand_id.is_some() {
-    //         slots.push("Mainhand");
-    //     }
-    //     if character.offhand_id.is_some() {
-    //         slots.push("Offhand");
-    //     }
+    let (occupied_slots, equipped_gear) = {
+        let mut slots: Vec<&Slot> = vec![];
+        let mut map = new_gear_overview();
+        // "Mainhand", "Offhand", "Head", "Chest", "Hands", "Legs", "Feet"
+        for item in character.equipped_gear.iter() {
+            slots.push(&item.slot);
 
-    //     slots
-    // };
+            let mut item_data = HashMap::<String, String>::new();
+            
+            let color = match item.rarity {
+                Rarity::Common => "grey",
+                Rarity::Rare => "skyblue",
+                Rarity::Epic => "gold",
+                Rarity::Legendary => "purple",
+            };
 
-    // for item in inventory.iter_mut() {
-    //     // println!("{:#?}", item.slot);
-    //     // println!("{:#?}", occupied_slots);
-    //     // println!("{:#?}", occupied_slots.contains(&item.slot.as_str()));
-    //     // println!("");
-    //     item.can_equip = Some(!occupied_slots.contains(&item.slot.as_str()));
-    // }
+            item_data.insert("name".to_owned(), item.name.clone());
+            item_data.insert("color".to_owned(), color.to_owned());
+            map.insert(item.slot.clone(), item_data);
+        }
 
-    // context.insert("character", &character);
-    // context.insert("inventory", &inventory);
-    // context.insert("is_owner", &character["account_id"] == claims.sub);
+        (slots, map)
+    };
 
-    let Ok(html) = tera.render("relania/character.html", &context) else {
-        return HttpResponse::InternalServerError().body("Template error");
+    for item in character.inventory.iter_mut() {
+        // println!("{:#?}", item.slot);
+        // println!("{:#?}", occupied_slots);
+        // println!("{:#?}", occupied_slots.contains(&item.slot.as_str()));
+        // println!("");
+        item.can_equip = Some(!occupied_slots.contains(&&item.slot));
+    }
+    
+    dbg!(&equipped_gear);
+
+    context.insert("character", &character);
+    context.insert("equipped_gear", &equipped_gear);
+    context.insert("is_owner", &(character.account_id == claims.sub));
+
+    let html = match tera.render("documenia/character.html", &context) {
+        Ok(html) => html,
+        Err(e) => {
+            dbg!(e);
+            return HttpResponse::InternalServerError().body("Template error");
+        }
     };
 
     HttpResponse::Ok().body(html)
+}
+
+
+// Helpers
+
+fn new_gear_overview<'a>() -> EquippedGear<'a> {
+    let mut map = EquippedGear::new();
+    // "Mainhand", "Offhand", "Head", "Chest", "Hands", "Legs", "Feet"
+    let slots = [
+        Slot::Head,
+        Slot::Chest,
+        Slot::Hands,
+        Slot::Legs,
+        Slot::Feet,
+        Slot::MainHand,
+        Slot::OffHand,
+    ];
+    for slot in slots.iter() {
+        let mut item_data = HashMap::<String, String>::new();
+
+        item_data.insert("name".to_owned(), "none".to_owned());
+        item_data.insert("color".to_owned(), "white".to_owned());
+        map.insert(slot.clone(), item_data);
+    }
+
+    map
 }

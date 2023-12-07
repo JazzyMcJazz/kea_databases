@@ -5,6 +5,10 @@ use crate::utils::traits::Thingify;
 
 use super::enums::{GuildRole, Rarity, Slot};
 
+/////////////////////
+// Database Models //
+/////////////////////
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Account {
     pub uid: Option<String>,
@@ -33,24 +37,25 @@ pub struct GuildMember {
 pub struct Character {
     pub uid: Option<String>,
     id: Thing,
-    account_id: String,
+    pub account_id: String,
     name: String,
     experience: u64,
     class: Class,
-    equipped_gear: Vec<Gear>,
-    inventory: Vec<Gear>,
+    pub equipped_gear: Vec<Gear>,
+    pub inventory: Vec<Gear>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Gear {
-    name: String,              // denormalised item.name
-    slot: Slot,                // denormalised item.slot
-    rarirty: Rarity,           // denormalised item.rarity
+    pub name: String,              // denormalised item.name
+    pub slot: Slot,                // denormalised item.slot
+    pub rarity: Rarity,           // denormalised item.rarity
     weapon_skill: WeaponSkill, // denormalized item.weapon_skill
     damage_upper: u32,         // if weapon
     damage_lower: u32,         // if weapon
     armor_upper: u32,          // if armor
     armor_lower: u32,          // if armor
+    pub can_equip: Option<bool>,           // denormalised class.skills
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,12 +83,16 @@ pub struct Item {
     weapon_skill: Option<WeaponSkill>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WeaponSkill {
     name: String,
     damage_upper: u32,
     damage_lower: u32,
 }
+
+//////////////////////////////
+// Thingify implementations //
+//////////////////////////////
 
 impl Thingify for Account {
     #[allow(dead_code)]

@@ -16,6 +16,19 @@ impl CharacterRepo {
         result.take(0)
     }
 
+    pub async fn get_by_id(db: &Surreal<Any>, id: &String) -> Result<Option<Character>, Error> {
+        let mut result = db
+            .query(r#"
+                SELECT 
+                *, equipped_gear.*, inventory.*
+                FROM type::thing("character", $id)
+            "#)
+            .bind(("id", id))
+            .await?;
+
+        result.take(0)
+    }
+
     // exists_by_id_and_account_id(db, id, account_id)
     // get_view_by_id(db, id)
 
@@ -55,5 +68,11 @@ impl CharacterRepo {
         let id = id.get("id").unwrap();
 
         Ok(id.id.to_raw())
+    }
+
+    pub async fn delete_by_id(db: &Surreal<Any>, id: &String) -> Result<(), Error> {
+        db.query("DELETE type::thing(\"character\", $id)").bind(("id", id)).await?;
+
+        Ok(())
     }
 }

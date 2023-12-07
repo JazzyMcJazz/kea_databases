@@ -180,7 +180,15 @@ fn init(cfg: &mut web::ServiceConfig) {
             .route(
                 "/c",
                 web::post().to(routes::documenia::character::create_character),
-            ),
+            )
+            .route(
+                "/c/{id}",
+                web::get().to(routes::documenia::character::character_detail),
+            )
+            .route(
+                "/c/{id}",
+                web::delete().to(routes::documenia::character::character_detail),
+            )
     );
 
     // Default 404

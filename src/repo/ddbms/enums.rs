@@ -6,7 +6,7 @@ pub enum GuildRole {
     Member,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash, Clone)]
 pub enum Slot {
     Head,
     Chest,
@@ -17,7 +17,7 @@ pub enum Slot {
     OffHand,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Rarity {
     Common,
     Rare,
