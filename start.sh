@@ -2,6 +2,7 @@ docker build -t rpg_server:latest .
 
 docker network rm rpg_network > /dev/null 2>&1
 docker network create rpg_network
+docker network connect rpg_net nginx-proxy > /dev/null 2>&1
 
 docker stop rpg_mariadb > /dev/null 2>&1
 docker rm rpg_mariadb > /dev/null 2>&1
