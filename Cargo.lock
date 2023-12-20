@@ -2917,27 +2917,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "project"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "async-trait",
- "bcrypt 0.15.0",
- "chrono",
- "dotenv",
- "env_logger",
- "futures-util",
- "jsonwebtoken",
- "migration",
- "rand",
- "sea-orm",
- "serde",
- "surrealdb",
- "tera",
- "tracing",
-]
-
-[[package]]
 name = "psl-types"
 version = "2.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3290,6 +3269,27 @@ name = "robust"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cbf4a6aa5f6d6888f39e980649f3ad6b666acdce1d78e95b8a2cb076e687ae30"
+
+[[package]]
+name = "rpg"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "async-trait",
+ "bcrypt 0.15.0",
+ "chrono",
+ "dotenv",
+ "env_logger",
+ "futures-util",
+ "jsonwebtoken",
+ "migration",
+ "rand",
+ "sea-orm",
+ "serde",
+ "surrealdb",
+ "tera",
+ "tracing",
+]
 
 [[package]]
 name = "rsa"
