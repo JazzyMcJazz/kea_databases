@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    
+    <h1>Register new account on Graphia</h1>
+    
+    <form 
+        action="/graphia/register" 
+        method="POST"
+        hx-ext="response-targets"
+        hx-post="/graphia/register"
+        hx-target-200="body"
+        hx-target-400="#error"
+        hx-target-409="#error"
+    >
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" required />
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required />
+        <label for="re_password">Repeat Password</label>
+        <input type="password" name="re_password" id="re_password" required />
+        <input type="submit" value="Register" />
+    </form>
+
+    <p id="error" style="color: red;"></p>
+
+    <p>Already have an account? <a href="/graphia/login">Login</a></p>
+{% endblock %}

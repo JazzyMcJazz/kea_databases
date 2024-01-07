@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <h1>Hello, {{ gdb_user.username }}</h1>
+    <h2>Welcome to Graphia</h2>
+
+    <br>
+
+    <h3>Choose a character or <a href="/graphia/c">create a new one</a></h3>
+    <table>
+        <tbody>
+            {% for character in characters %}
+                    <tr>
+                        <td><a href="/graphia/c/{{ character.uid }}">{{ character.name }}</a></td>
+                        <td>{{ character.class.name }}</td>
+                    </tr>
+                </a>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

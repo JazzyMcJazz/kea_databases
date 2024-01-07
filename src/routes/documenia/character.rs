@@ -14,7 +14,7 @@ type EquippedGear<'a> = HashMap::<Slot, HashMap<String, String>>;
 // GET /documenia/c
 pub async fn create_character_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
-    let conn = &data.surreal;
+    let conn = &data.ddbms_surreal;
     let mut context = Extensions::unwrap_context(&req);
 
     let mut classes = ClassRepo::all(conn).await.unwrap();
@@ -40,7 +40,7 @@ pub async fn create_character(
     req: HttpRequest,
     form: web::Form<CreateCharacterForm>,
 ) -> HttpResponse {
-    let db = &data.surreal;
+    let db = &data.ddbms_surreal;
 
     let claims = Extensions::unwrap_claims::<DdbClaims, String>(&req);
 
@@ -63,7 +63,7 @@ pub async fn character_detail(
 ) -> HttpResponse {
     let tera = &data.tera;
     
-    let conn = &data.surreal;
+    let conn = &data.ddbms_surreal;
     let (claims, mut context) = Extensions::unwrap_claims_and_context::<DdbClaims, String>(&req);
 
     let id = &path.0;

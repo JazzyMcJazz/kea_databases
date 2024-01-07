@@ -42,16 +42,16 @@ impl Claims<String> for DdbClaims {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GdbClaims {
-    sub: i32,
+    pub sub: String,
     username: String,
     exp: usize,
 }
 
-impl GdbClaims {
-    // pub fn new(sub: i32, username: String) -> Self {
-    //     let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
-    //     Self { sub, username, exp: exp as usize }
-    // }
+impl Claims<String> for GdbClaims {
+    fn new(sub: String, username: String) -> Self {
+        let exp = chrono::Utc::now().timestamp() + 60 * 60 * 24 * 365; // 365 days
+        Self { sub, username, exp: exp as usize }
+    }
 }

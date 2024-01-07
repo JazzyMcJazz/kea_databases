@@ -39,7 +39,7 @@ ARG APP=/usr/local/bin
 RUN mkdir -p ${APP}//public
 
 COPY --from=builder /rpg/target/release/rpg ${APP}/rpg
-COPY ./.env /.env
+COPY ./.env.docker /.env
 COPY ./templates ${APP}/templates
 
 WORKDIR ${APP}

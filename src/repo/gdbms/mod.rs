@@ -8,20 +8,20 @@ use async_trait::async_trait;
 use surrealdb::{engine::any::Any, Surreal};
 
 #[async_trait]
-pub trait DocuRepo {
-    async fn documenia_init(&self);
-    async fn documenia_clear(&self, database: &str);
+pub trait GraphRepo {
+    async fn graphia_init(&self);
+    async fn graphia_clear(&self, database: &str);
 }
 
 #[async_trait]
-impl DocuRepo for Surreal<Any> {
-    async fn documenia_clear(&self, database: &str) {
+impl GraphRepo for Surreal<Any> {
+    async fn graphia_clear(&self, database: &str) {
         self.query(format!("REMOVE DATABASE {};", database))
             .await
             .unwrap();
     }
 
-    async fn documenia_init(&self) {
+    async fn graphia_init(&self) {
         let query = include_str!("./init.surql");
         let mut result = self.query(query).await.unwrap_or_else(|e| {
             panic!("Failed to initialize database: {}", e);

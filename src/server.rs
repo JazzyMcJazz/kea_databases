@@ -14,14 +14,15 @@ use surrealdb::{
 use tera::Tera;
 use tracing::log;
 
-use crate::{middleware, repo::ddbms::Repo, routes, utils::traits::Terafy};
+use crate::{middleware, repo::{ddbms::DocuRepo, gdbms::GraphRepo}, routes, utils::traits::Terafy};
 
 impl Terafy for Tera {}
 
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub conn: DatabaseConnection,
-    pub surreal: Surreal<Any>,
+    pub ddbms_surreal: Surreal<Any>,
+    pub gdbms_surreal: Surreal<Any>,
     pub tera: Tera,
 }
 
@@ -38,24 +39,41 @@ async fn start() -> std::io::Result<()> {
 
     Migrator::up(&conn, None).await.unwrap();
 
-    // Establish connection to the SurrealDB database
+    // Establish connection to the SurrealDB document database
     let surreal_url = env::var("SURREAL_URL").expect("SURREAL_URL is not set in .env file");
-    let surreal = connect(surreal_url).await.unwrap();
-    surreal
+    let ddbms_surreal = connect(&surreal_url).await.unwrap();
+    ddbms_surreal
         .signin(Root {
             username: &env::var("SURREAL_USER").expect("SURREAL_USER is not set in .env file"),
             password: &env::var("SURREAL_PASS").expect("SURREAL_PASS is not set in .env file"),
         })
         .await
         .unwrap();
-    surreal
+    ddbms_surreal
         .use_ns("documenia")
         .use_db("documenia")
         .await
         .unwrap();
 
-    // surreal.surreal_clear("documenia").await;
-    surreal.documenia_init().await;
+    // Establish connection to the SurrealDB graph database
+    let gdbms_surreal = connect(surreal_url).await.unwrap();
+    gdbms_surreal
+        .signin(Root {
+            username: &env::var("SURREAL_USER").expect("SURREAL_USER is not set in .env file"),
+            password: &env::var("SURREAL_PASS").expect("SURREAL_PASS is not set in .env file"),
+        })
+        .await
+        .unwrap();
+    gdbms_surreal
+        .use_ns("graphia")
+        .use_db("graphia")
+        .await
+        .unwrap();
+
+    // ddbms_surreal.surreal_clear("documenia").await;
+    // gdbms_surreal.graphia_clear("graphia").await;
+    ddbms_surreal.documenia_init().await;
+    gdbms_surreal.graphia_init().await;
 
     // Initialize Tera template engine
     let Ok(tera) = Tera::new("templates/**/*") else {
@@ -65,7 +83,8 @@ async fn start() -> std::io::Result<()> {
     // Build app state
     let state = AppState {
         conn,
-        surreal,
+        ddbms_surreal,
+        gdbms_surreal,
         tera,
     };
 
@@ -189,6 +208,48 @@ fn init(cfg: &mut web::ServiceConfig) {
                 "/c/{id}",
                 web::delete().to(routes::documenia::character::character_detail),
             )
+    );
+
+    // Graphia (PUBLIC)
+    cfg.route(
+        "/graphia/login",
+        web::get().to(routes::graphia::auth::login_page),
+    );
+    cfg.route(
+        "/graphia/login",
+        web::post().to(routes::graphia::auth::login),
+    );
+    cfg.route(
+        "/graphia/register",
+        web::get().to(routes::graphia::auth::register_page),
+    );
+    cfg.route(
+        "/graphia/register",
+        web::post().to(routes::graphia::auth::register),
+    );
+
+    // Graphia (PROTECTED)
+    cfg.service(
+        web::scope("/graphia")
+            .wrap(middleware::Authorization)
+            .route("", web::get().to(routes::graphia::index::index))
+            .route("/logout", web::get().to(routes::graphia::auth::logout))
+            // .route(
+            //     "/c",
+            //     web::get().to(routes::graphia::character::create_character_page),
+            // )
+            // .route(
+            //     "/c",
+            //     web::post().to(routes::graphia::character::create_character),
+            // )
+            // .route(
+            //     "/c/{id}",
+            //     web::get().to(routes::graphia::character::character_detail),
+            // )
+            // .route(
+            //     "/c/{id}",
+            //     web::delete().to(routes::graphia::character::character_detail),
+            // )
     );
 
     // Default 404

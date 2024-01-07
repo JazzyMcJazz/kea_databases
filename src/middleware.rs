@@ -97,7 +97,7 @@ where
         }
 
         // Add the Graphia user to the context (if they are logged in)
-        if let Some(cookie) = req.cookie("ddb_id") {
+        if let Some(cookie) = req.cookie("gdb_id") {
             let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
             let token_data = jsonwebtoken::decode::<GdbClaims>(
                 cookie.value(),

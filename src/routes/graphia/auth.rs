@@ -6,17 +6,17 @@ use jsonwebtoken::EncodingKey;
 use serde::Deserialize;
 
 use crate::{
-    repo::ddbms::account_repo::SurrealAccountRepo,
+    repo::gdbms::account_repo::SurrealAccountRepo,
     server::AppState,
     utils::{
-        claims::{Claims, DdbClaims},
+        claims::{Claims, GdbClaims},
         extensions::Extensions,
     },
 };
 
-const COOKIE_NAME: &str = "ddb_id";
+const COOKIE_NAME: &str = "gdb_id";
 const LOGIN_ERROR: &str = "Invalid username or password";
-const DEFAULT_REDIRECT: &str = "/documenia";
+const DEFAULT_REDIRECT: &str = "/graphia";
 
 // GET /documenia/login
 pub async fn login_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
@@ -24,7 +24,7 @@ pub async fn login_page(data: web::Data<AppState>, req: HttpRequest) -> HttpResp
 
     let context = Extensions::unwrap_context(&req);
 
-    let Ok(html) = tera.render("documenia/auth/login.html", &context) else {
+    let Ok(html) = tera.render("graphia/auth/login.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 
@@ -48,7 +48,7 @@ pub async fn login(
     form: web::Form<LoginForm>,
     q: web::Query<PathQuery>,
 ) -> HttpResponse {
-    let db = &data.ddbms_surreal;
+    let db = &data.gdbms_surreal;
 
     let Ok(acc) =
         SurrealAccountRepo::find_by_credentials(db, form.username.clone(), form.password.clone())
@@ -84,7 +84,7 @@ pub async fn register_page(data: web::Data<AppState>, req: HttpRequest) -> HttpR
 
     let context = Extensions::unwrap_context(&req);
 
-    let Ok(html) = tera.render("documenia/auth/register.html", &context) else {
+    let Ok(html) = tera.render("graphia/auth/register.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 
@@ -112,7 +112,7 @@ pub async fn register(data: web::Data<AppState>, form: web::Form<RegisterForm>) 
         return HttpResponse::BadRequest().body("Password must be at least 6 characters long");
     }
 
-    let db = &data.ddbms_surreal;
+    let db = &data.gdbms_surreal;
     let account =
         match SurrealAccountRepo::create_account(db, form.username.clone(), form.password.clone())
             .await
@@ -158,7 +158,7 @@ fn auth_token(id: String, username: String) -> Result<String, ()> {
 
     let key = EncodingKey::from_secret(secret.as_ref());
 
-    let claims = DdbClaims::new(id, username);
+    let claims = GdbClaims::new(id, username);
 
     let Ok(token) = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &claims, &key) else {
         eprintln!("Auth Error: Failed to encode JWT");
