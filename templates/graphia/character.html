@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <br>
+    <div style="display: flex; justify-content: space-between;">
+        <a href="/graphia">Back to character selection</a>
+        <button
+            hx-delete="/graphia/c/{{character.uid}}"
+            style="color: red; cursor: pointer;"
+        >Delete {{ character.name }}</button>
+    </div>
+
+    <h1>{{ character.name }}</h1>
+
+    <p>Experience: {{ character.experience }}</p>
+    <p>Level: character.level</p>
+    <p>Class: {{ character.class.name }}</p>
+    <p>Guild: {% if character.guild %} {{character.guild}} {% else %} none {% endif %}</p>
+
+    <!-- Table view -->
+    <div style="display: flex">
+        <div>
+            <h2>Armor</h2>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Head</td>
+                        <td style="color: {{equipped_gear.Head.color}}">{{equipped_gear.Head.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Chest</td>
+                        <td style="color: {{equipped_gear.Chest.color}}">{{equipped_gear.Chest.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Hands</td>
+                        <td style="color: {{equipped_gear.Hands.color}}">{{equipped_gear.Hands.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Legs</td>
+                        <td style="color: {{equipped_gear.Legs.color}}">{{equipped_gear.Legs.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Feet</td>
+                        <td style="color: {{equipped_gear.Feet.color}}">{{equipped_gear.Feet.name}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <pre>       </pre>
+        <div>
+            <h2>Weapons</h2>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Mainhand</td>
+                        <td style="color: {{equipped_gear.MainHand.color}}">{{equipped_gear.MainHand.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Offhand</td>
+                        <td style="color: {{equipped_gear.OffHand.color}}">{{equipped_gear.OffHand.name}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <br>
+    <button type="button"
+        hx-post="/graphia/c/{{character.id}}/i"
+        style="color: lightgreen; cursor: pointer; font-weight: bold;"
+    >Fight a monster</button>
+    <br>
+    
+    <h2>Inventory</h2>
+    {% if character.inventory|length == 0 %}
+        <p>Empty</p>
+
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Slot</th>
+                    <th>Rarity</th>
+                    <th>Armor</th>
+                    <th>Damage</th>
+                    <th>Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in character.inventory %}
+                    <!-- <p>{{ item.name }}, {{ item.slot }}, {{ item.armor_lower }}</p> -->
+                    <tr>
+                        <td style="vertical-align: middle;">{{ item.name }}</td>
+                        <td style="vertical-align: middle;">{{ item.slot }}</td>
+                        <td style="vertical-align: middle; color: {{item.color}}">{{ item.rarity }}</td>
+                        <td style="vertical-align: middle;">
+                            {% if item.armor_upper %}
+                                {{ item.armor_lower }}-{{ item.armor_upper }}
+                            {% endif %}
+                        </td>
+                        <td style="vertical-align: middle;">
+                            {% if item.damage_upper %}
+                                {{ item.damage_lower }}-{{ item.damage_upper }}
+                            {% endif %}
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <button onclick="document.querySelector('#dia-{{item.id}}').showModal()">
+                                •••
+                            </button>
+                        </td>
+                    </tr>
+                    <dialog id="dia-{{item.id}}">
+                        <header>{{item.name}}</header>
+                        <p>Actions</p>
+                        <menu>
+                            <button 
+                                hx-put="/graphia/c/{{character.id}}/i/{{item.id}}"
+                                style="color: lightgreen"
+                                {% if not item.can_equip %}disabled{% endif %}
+                            >
+                                Equip
+                            </button>
+                            <button 
+                                hx-delete="/graphia/c/{{character.id}}/i/{{item.id}}"
+                                style="color: red"
+                            >
+                                Delete
+                            </button>
+                            <button onclick="document.querySelector('#dia-{{item.id}}').close()">
+                                Close
+                            </button>
+                        </menu>
+                    </dialog>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div style="height: 200px"></div>
+{% endblock %}

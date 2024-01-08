@@ -234,22 +234,22 @@ fn init(cfg: &mut web::ServiceConfig) {
             .wrap(middleware::Authorization)
             .route("", web::get().to(routes::graphia::index::index))
             .route("/logout", web::get().to(routes::graphia::auth::logout))
-            // .route(
-            //     "/c",
-            //     web::get().to(routes::graphia::character::create_character_page),
-            // )
-            // .route(
-            //     "/c",
-            //     web::post().to(routes::graphia::character::create_character),
-            // )
-            // .route(
-            //     "/c/{id}",
-            //     web::get().to(routes::graphia::character::character_detail),
-            // )
-            // .route(
-            //     "/c/{id}",
-            //     web::delete().to(routes::graphia::character::character_detail),
-            // )
+            .route(
+                "/c",
+                web::get().to(routes::graphia::character::create_character_page),
+            )
+            .route(
+                "/c",
+                web::post().to(routes::graphia::character::create_character),
+            )
+            .route(
+                "/c/{id}",
+                web::get().to(routes::graphia::character::character_detail),
+            )
+            .route(
+                "/c/{id}",
+                web::delete().to(routes::graphia::character::character_detail),
+            )
     );
 
     // Default 404
