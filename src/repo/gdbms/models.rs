@@ -47,15 +47,15 @@ pub struct Character {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Gear {
-    pub name: String,              // denormalised item.name
-    pub slot: Slot,                // denormalised item.slot
-    pub rarity: Rarity,           // denormalised item.rarity
-    weapon_skill: WeaponSkill, // denormalized item.weapon_skill
-    damage_upper: u32,         // if weapon
-    damage_lower: u32,         // if weapon
-    armor_upper: u32,          // if armor
-    armor_lower: u32,          // if armor
-    pub can_equip: Option<bool>,           // denormalised class.skills
+    pub id: Thing,
+    pub name: String,              
+    pub slot: Slot,                
+    pub rarity: Rarity,           
+    weapon_skill: Option<WeaponSkill>, // if weapon
+    upper_stat: u32,         
+    lower_stat: u32,         
+    pub can_equip: Option<bool>,
+    pub color: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

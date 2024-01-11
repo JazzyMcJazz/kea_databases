@@ -1,6 +1,7 @@
 pub mod account_repo;
 pub mod character_repo;
 pub mod class_repo;
+pub mod item_piece_repo;
 pub mod enums;
 pub mod models;
 

@@ -66,7 +66,7 @@
 
     <br>
     <button type="button"
-        hx-post="/graphia/c/{{character.id}}/i"
+        hx-post="/graphia/c/{{character.uid}}/i"
         style="color: lightgreen; cursor: pointer; font-weight: bold;"
     >Fight a monster</button>
     <br>
@@ -89,23 +89,23 @@
             </thead>
             <tbody>
                 {% for item in character.inventory %}
-                    <!-- <p>{{ item.name }}, {{ item.slot }}, {{ item.armor_lower }}</p> -->
+                    <!-- <p>{{ item.name }}, {{ item.slot }}</p> -->
                     <tr>
                         <td style="vertical-align: middle;">{{ item.name }}</td>
                         <td style="vertical-align: middle;">{{ item.slot }}</td>
                         <td style="vertical-align: middle; color: {{item.color}}">{{ item.rarity }}</td>
                         <td style="vertical-align: middle;">
-                            {% if item.armor_upper %}
-                                {{ item.armor_lower }}-{{ item.armor_upper }}
+                            {% if item.slot != 'MainHand' and item.slot != 'OffHand' %}
+                                {{ item.lower_stat }}-{{ item.upper_stat }}
                             {% endif %}
                         </td>
                         <td style="vertical-align: middle;">
-                            {% if item.damage_upper %}
-                                {{ item.damage_lower }}-{{ item.damage_upper }}
+                            {% if item.slot == 'MainHand' or item.slot == 'OffHand' %}
+                                {{ item.lower_stat }}-{{ item.upper_stat }}
                             {% endif %}
                         </td>
                         <td style="vertical-align: middle;">
-                            <button onclick="document.querySelector('#dia-{{item.id}}').showModal()">
+                            <button onclick="document.querySelector('#dia-{{item.id.id}}').showModal()">
                                 •••
                             </button>
                         </td>

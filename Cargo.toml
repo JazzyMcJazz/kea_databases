@@ -7,20 +7,20 @@ edition = "2021"
 
 [dependencies]
 migration = { path = "./migration" }
-actix-web = "4.4.0"
+actix-web = "4.4.1"
 dotenv = "0.15.0"
-serde = "1.0.188"
-tracing = "0.1.37"
-env_logger = "0.10.0"
+serde = "1.0.195"
+tracing = "0.1.40"
+env_logger = "0.10.1"
 tera = "1.19.1"
 rand = "0.8.5"
-sea-orm = "0.12.3"
+sea-orm = "0.12.10"
 chrono = "0.4.31"
 bcrypt = "0.15.0"
-jsonwebtoken = "8.3.0"
-futures-util = "0.3.28"
-surrealdb = "1.0.0"
-async-trait = "0.1.74"
+jsonwebtoken = "9.2.0"
+futures-util = "0.3.30"
+surrealdb = "1.1.0"
+async-trait = "0.1.77"
 
 [profile.release]
 strip = true

@@ -1,12 +1,35 @@
-use std::collections::HashMap;
-
 use surrealdb::{engine::any::Any, sql::Thing, Error, Surreal};
 
-use super::models::{Character, Class, Gear};
+use super::models::{Character, Class};
 
 pub struct CharacterRepo;
 
 impl CharacterRepo {
+    pub async fn exists_by_id_and_account_id(
+        db: &Surreal<Any>,
+        character_id: &String,
+        account_id: &String,
+    ) -> Result<bool, Error> {
+        let mut result = db
+            .query(r#"
+                LET $acc = type::thing("account", $account_id);
+                LET $char = type::thing("character", $character_id);
+                LET $result = SELECT out.id AS id FROM has WHERE in.id IS $acc AND out.id IS $char;
+                array::len($result) IS 1;
+            "#)
+            .bind(("account_id", account_id))
+            .bind(("character_id", character_id))
+            .await?;
+
+        match result.take::<Option<bool>>(3) {
+            Ok(account_id) => Ok(account_id.is_some()),
+            Err(e) => {
+                dbg!(&e);
+                Err(e)
+            }
+        }
+    }
+
     pub async fn get_by_account_id(db: &Surreal<Any>, id: String) -> Result<Vec<Character>, Error> {
         let mut result = db
             .query(r#"
@@ -14,8 +37,8 @@ impl CharacterRepo {
                     *,
                     array::first(->is_a.out.*) as class,
                     string::split(type::string(array::first(<-has<-account.id)), ":")[1] as account_id,
-                    ->equipped->gear->is_instance_of->item.* as equipped_gear,
-                    ->unequipped->gear->is_instance_of->item.* as inventory
+                    [] as equipped_gear,
+                    [] as inventory
                 FROM type::thing("account", $id)->has->character;
             "#)
             .bind(("id", id))
@@ -25,20 +48,14 @@ impl CharacterRepo {
     }
 
     pub async fn get_by_id(db: &Surreal<Any>, id: &String) -> Result<Option<Character>, Error> {
+        let query = include_str!("queries/select_character_details.surql");
+        
         let mut result = db
-            .query(r#"
-                SELECT 
-                    *,
-                    string::split(type::string(array::first(<-has<-account.id)), ":")[1] as account_id,
-                    array::first(->is_a.out.*) as class,
-                    ->equipped->gear->is_instance_of->item.* as equipped_gear,
-                    ->unequipped->gear->is_instance_of->item.* as inventory
-                FROM type::thing("character", $id);
-            "#) // TODO: query as graph
+            .query(query) 
             .bind(("id", id))
             .await?;
 
-        result.take(0)
+        result.take(1)
     }   
 
     pub async fn create(
@@ -47,7 +64,7 @@ impl CharacterRepo {
         class_id: &String,
         account_id: &String,
     ) -> Result<String, &'static str> {
-        let Ok(Some(mut class)) = db.select::<Option<Class>>(("class", class_id)).await else {
+        let Ok(Some(class)) = db.select::<Option<Class>>(("class", class_id)).await else {
             return Err("Class not found");
         };
 

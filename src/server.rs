@@ -250,6 +250,21 @@ fn init(cfg: &mut web::ServiceConfig) {
                 "/c/{id}",
                 web::delete().to(routes::graphia::character::character_detail),
             )
+            .route(
+                "/c/{id}/i",
+                web::post().to(routes::graphia::inventory::loot_list),
+            )
+            // .route(
+            //     "/c/{id}/i/{item_piece_id}",
+            //     web::put().to(routes::graphia::inventory::loot_details),
+            // )
+            // .route(
+            //     "/c/{id}/i/{item_piece_id}",
+            //     web::patch().to(routes::graphia::inventory::loot_details),
+            // )
+            // .route(
+            //     "/c/{id}/i/{item_piece_id}",
+            //     web::delete().to(routes::graphia::inventory::loot_details),
     );
 
     // Default 404

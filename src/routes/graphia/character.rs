@@ -4,7 +4,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
 use crate::{
-    repo::gdbms::{character_repo::CharacterRepo, class_repo::ClassRepo, enums::{Slot, Rarity}},
+    repo::gdbms::{character_repo::CharacterRepo, class_repo::ClassRepo, enums::{Slot, Rarity}, models::Gear},
     server::AppState,
     utils::{claims::GdbClaims, extensions::Extensions, traits::{Terafy, Thingify}},
 };
@@ -81,6 +81,8 @@ pub async fn character_detail(
     };
 
     character.thingify();
+    set_color(&mut character.inventory);
+    set_color(&mut character.equipped_gear);
 
     if character.account_id != claims.sub {
         return HttpResponse::Unauthorized().body("Unauthorized");
@@ -139,6 +141,18 @@ pub async fn character_detail(
 
 
 // Helpers
+fn set_color(items: &mut Vec<Gear>) {
+    items.iter_mut().for_each(|item| {
+        let color = match item.rarity {
+            Rarity::Common => "grey",
+            Rarity::Rare => "skyblue",
+            Rarity::Epic => "gold",
+            Rarity::Legendary => "purple",
+        };
+
+        item.color = Some(color.to_owned());
+    });
+} 
 
 fn new_gear_overview<'a>() -> EquippedGear<'a> {
     let mut map = EquippedGear::new();

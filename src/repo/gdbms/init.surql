@@ -1,3 +1,36 @@
+DEFINE FUNCTION fn::drop_item($character_id: string) {
+
+    LET $char = SELECT id FROM type::thing("character", $character_id);
+
+    IF (!$char) {
+        THROW "Character not found";
+    };
+
+    LET $item = SELECT * FROM item ORDER BY rand();
+    $item = array::first($item);
+
+    # Get multiplier based on rarity
+    LET $multiplier = 1;
+    IF ($item.rarity IS "Rare") {
+        $multiplier = 2;
+    } ELSE IF ($item.rarity IS "Epic") {
+        $multiplier = 3;
+    } ELSE IF ($item.rarity IS "Legendary") {
+        $multiplier = 4;
+    };
+
+    LET $lower_stat = <int> math::floor(50 + (100 - 50) * rand()) * $multiplier;
+    LET $upper_stat = <int> math::floor(101 + (150 - 49) * rand()) * $multiplier;
+
+    LET $item_piece = CREATE ONLY item_piece CONTENT {
+        upper_stat: $upper_stat,
+        lower_stat: $lower_stat,
+    };
+
+    RELATE $item_piece->is_instance_of->$item;
+    RELATE $char->unequipped->$item_piece;
+};
+
 IF !(SELECT * FROM class:warrior) {
     CREATE class:warrior CONTENT {
         name: "Warrior",
