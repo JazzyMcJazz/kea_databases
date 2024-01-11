@@ -47,6 +47,7 @@ pub struct Character {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Gear {
+    pub uid: Option<String>,
     pub id: Thing,
     pub name: String,              
     pub slot: Slot,                
@@ -119,6 +120,12 @@ impl Thingify for Class {
     }
 }
 impl Thingify for Item {
+    #[allow(dead_code)]
+    fn thingify(&mut self) {
+        self.uid = Some(self.id.id.to_raw());
+    }
+}
+impl Thingify for Gear {
     #[allow(dead_code)]
     fn thingify(&mut self) {
         self.uid = Some(self.id.id.to_raw());

@@ -69,7 +69,7 @@ pub async fn character_detail(
     let id = &path.0;
 
     if req.method() == "DELETE" {
-        let result = CharacterRepo::delete_by_id(conn, id).await;
+        let _ = CharacterRepo::delete_by_id(conn, id).await;
         return HttpResponse::Found()
             .append_header(("HX-Redirect", "/graphia"))
             .finish();
@@ -151,6 +151,7 @@ fn set_color(items: &mut Vec<Gear>) {
         };
 
         item.color = Some(color.to_owned());
+        item.thingify();
     });
 } 
 

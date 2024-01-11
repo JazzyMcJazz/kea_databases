@@ -1,4 +1,4 @@
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse, http::Method};
 
 use crate::{server::AppState, utils::{extensions::Extensions, claims::GdbClaims}, repo::gdbms::{character_repo::CharacterRepo, item_piece_repo::ItemPieceRepo}};
 
@@ -35,38 +35,40 @@ pub async fn loot_list(
         .finish()
 }
 
-// PUT+PATCH+DELETE /relania/c/{id}/i/{loot_id}
-// pub async fn loot_details(
-//     data: web::Data<AppState>,
-//     path: web::Path<(i32, i32)>,
-//     req: HttpRequest,
-// ) -> HttpResponse {
-//     let conn = &data.conn;
-//     let claims = Extensions::unwrap_claims::<RdbClaims, i32>(&req);
+// PUT+PATCH+DELETE /graphia/c/{id}/i/{item_id}
+pub async fn loot_details(
+    data: web::Data<AppState>,
+    path: web::Path<(String, String)>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let conn = &data.gdbms_surreal;
+    let claims = Extensions::unwrap_claims::<GdbClaims, String>(&req);
+    let (character_id, item_id) = (path.0.to_owned(), path.1.to_owned());
 
-//     let Ok(is_owner) = CharacterRepo::exists_by_id_and_account_id(conn, path.0, claims.sub).await
-//     else {
-//         return HttpResponse::Unauthorized().body("Unauthorized");
-//     };
 
-//     if !is_owner {
-//         return HttpResponse::Unauthorized().body("Unauthorized");
-//     }
+    let Ok(is_owner) = CharacterRepo::exists_by_id_and_account_id(conn, &character_id, &claims.sub).await
+    else {
+        return HttpResponse::Unauthorized().body("Internal Server Error");
+    };
 
-//     match *req.method() {
-//         Method::PUT => {
-//             let _ = ItemPieceRepo::equip_by_id(conn, path.0, path.1).await;
-//         }
-//         Method::PATCH => {
-//             // let _ = ItemPieceRepo::unequip_by_id(conn, path.0, path.1).await;
-//         }
-//         Method::DELETE => {
-//             let _ = ItemPieceRepo::delete_by_id(conn, path.1).await;
-//         }
-//         _ => {}
-//     }
+    if !is_owner {
+        return HttpResponse::Unauthorized().body("Unauthorized");
+    }
 
-//     HttpResponse::Found()
-//         .append_header(("HX-Refresh", "true"))
-//         .finish()
-// }
+    match *req.method() {
+        Method::PUT => {
+            let _ = ItemPieceRepo::equip_by_id(conn, &character_id, &item_id).await;
+        }
+        Method::PATCH => {
+            let _ = ItemPieceRepo::unequip_by_id(conn, &character_id, &item_id).await;
+        }
+        Method::DELETE => {
+            let _ = ItemPieceRepo::delete_by_id(conn, &character_id, &item_id).await;
+        }
+        _ => {}
+    }
+
+    HttpResponse::Found()
+        .append_header(("HX-Refresh", "true"))
+        .finish()
+}

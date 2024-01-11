@@ -105,29 +105,29 @@
                             {% endif %}
                         </td>
                         <td style="vertical-align: middle;">
-                            <button onclick="document.querySelector('#dia-{{item.id.id}}').showModal()">
+                            <button onclick="document.querySelector('#dia-{{item.uid}}').showModal()">
                                 •••
                             </button>
                         </td>
                     </tr>
-                    <dialog id="dia-{{item.id}}">
+                    <dialog id="dia-{{item.uid}}">
                         <header>{{item.name}}</header>
                         <p>Actions</p>
                         <menu>
                             <button 
-                                hx-put="/graphia/c/{{character.id}}/i/{{item.id}}"
+                                hx-put="/graphia/c/{{character.uid}}/i/{{item.uid}}"
                                 style="color: lightgreen"
                                 {% if not item.can_equip %}disabled{% endif %}
                             >
                                 Equip
                             </button>
                             <button 
-                                hx-delete="/graphia/c/{{character.id}}/i/{{item.id}}"
+                                hx-delete="/graphia/c/{{character.uid}}/i/{{item.uid}}"
                                 style="color: red"
                             >
                                 Delete
                             </button>
-                            <button onclick="document.querySelector('#dia-{{item.id}}').close()">
+                            <button onclick="document.querySelector('#dia-{{item.uid}}').close()">
                                 Close
                             </button>
                         </menu>
